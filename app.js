@@ -2,7 +2,7 @@
    1. VARIABLES GLOBALES
    ========================================= */
    let USUARIO_ID = null; 
-   const API_URL = "http://127.0.0.1:8000/api";
+   const API_URL = "https://reto-paes-mvp.onrender.com/api";;
    
    let userData = {
        streaks: { 'M1': 0, 'M2': 0, 'Lectora': 0, 'Ciencias': 0, 'Historia': 0 },
