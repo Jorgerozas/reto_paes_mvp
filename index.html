@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reto PAES</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reto PAES">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <div id="dashboard-screen" class="app-container">
+        <div class="header-dashboard">
+            <div>
+                <h2>Hola, <span id="user-name-display">Estudiante</span> 👋</h2>
+                <p class="subtitle">¿Qué entrenaremos hoy?</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="profile-btn" class="btn-secondary hidden" onclick="openProfile()">Mi Perfil</button>
+                <button id="logout-btn" class="logout-btn hidden">Salir</button>
+            </div>
+        </div>
+    
+        <div class="subject-grid">
+            <div class="subject-card" onclick="openQuestion('M1')">
+                <div class="subject-info">
+                    <h3>Matemática (M1)</h3>
+                    <div class="streak-info">🔥 Racha: <span id="streak-m1">0</span></div>
+                </div>
+                <span class="status-badge pendiente">Practicar</span>
+            </div>
+            <div class="subject-card" onclick="openQuestion('Lectora')">
+                <div class="subject-info">
+                    <h3>Comp. Lectora</h3>
+                    <div class="streak-info">🔥 Racha: <span id="streak-lectora">0</span></div>
+                </div>
+                <span class="status-badge pendiente">Practicar</span>
+            </div>
+            <div class="subject-card" onclick="openQuestion('M2')">
+                <div class="subject-info">
+                    <h3>Matemática (M2)</h3>
+                    <div class="streak-info">🔥 Racha: <span id="streak-m2">0</span></div>
+                </div>
+                <span class="status-badge pendiente">Practicar</span>
+            </div>
+
+            <div class="subject-card" onclick="openQuestion('Ciencias')">
+                <div class="subject-info">
+                    <h3>Ciencias</h3>
+                    <div class="streak-info">🔥 Racha: <span id="streak-ciencias">0</span></div>
+                </div>
+                <span class="status-badge pendiente">Practicar</span>
+            </div>
+
+            <div class="subject-card" onclick="openQuestion('Historia')">
+                <div class="subject-info">
+                    <h3>Historia y Cs. Sociales</h3>
+                    <div class="streak-info">🔥 Racha: <span id="streak-historia">0</span></div>
+                </div>
+                <span class="status-badge pendiente">Practicar</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="login-modal" class="overlay-modal">
+        <div class="glass-card text-center" style="max-width: 350px;">
+            <div class="avatar-circle" style="background: #4F46E5; color: white;">🚀</div>
+            <h2 id="auth-title">Bienvenido a Reto PAES</h2>
+            <p class="brand-subtitle" id="auth-subtitle">Ingresa para guardar tu progreso</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <input type="text" id="reg-name" placeholder="Tu Nombre" class="hidden" style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; width: 100%; box-sizing: border-box;">
+                <input type="email" id="user-email" placeholder="Tu Correo Electrónico" style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; width: 100%; box-sizing: border-box;">
+                <input type="password" id="user-password" placeholder="Tu Contraseña" style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; width: 100%; box-sizing: border-box;">
+                
+                <button id="auth-action-btn" class="btn-primary" onclick="procesarAuth()" style="margin-top: 10px;">Comenzar a entrenar</button>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">
+                <span id="auth-toggle-text">¿No tienes cuenta?</span> 
+                <a href="#" id="auth-toggle-link" onclick="toggleAuthMode()" style="color: #4F46E5; font-weight: bold; text-decoration: none;">Regístrate aquí</a>
+            </p>
+        </div>
+    </div>
+    
+    <div id="question-modal" class="hidden overlay-modal">
+        <div class="glass-card">
+            <div class="modal-header">
+                <h3 id="question-subject">Materia</h3>
+                <button class="close-btn" onclick="closeQuestion()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="question-text">Cargando pregunta...</p>
+                <div id="options-container" class="options-container">
+                    </div>
+                
+                <div id="feedback-container" class="feedback-box hidden">
+                    <h4 id="feedback-title">Resultado</h4>
+                    <p id="feedback-explanation">Explicación detallada de la respuesta.</p>
+                    <button class="btn-primary" id="btn-next-action" style="margin-top: 20px; padding: 10px;" onclick="siguienteAccion()">Siguiente pregunta ➔</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="profile-modal" class="hidden overlay-modal">
+        <div class="glass-card text-center" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Mi Perfil PAES</h3>
+                <button class="close-btn" onclick="closeProfile()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="avatar-circle">🎓</div>
+                <h2 id="profile-name">Estudiante</h2>
+                <p class="brand-subtitle">Plan Gratuito</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-number" id="stat-total-streak">0</span>
+                        <span class="stat-label">Puntaje de Rachas</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number" id="stat-today">0/15</span>
+                        <span class="stat-label">Aciertos Hoy</span>
+                    </div>
+                </div>
+                <h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; text-align: left; padding-left: 5px;">Rachas Activas</h4>
+                <div class="individual-streaks">
+                    <div class="streak-item">M1 <span id="prof-m1">0</span></div>
+                    <div class="streak-item">M2 <span id="prof-m2">0</span></div>
+                    <div class="streak-item">LEC <span id="prof-lec">0</span></div>
+                    <div class="streak-item">CIE <span id="prof-cie">0</span></div>
+                    <div class="streak-item">HIS <span id="prof-his">0</span></div>
+                </div>
+                                
+                <button class="btn-primary" style="background-color: #25D366; color: white; margin-bottom: 12px;" onclick="shareProgress()">📲 Presumir en WhatsApp</button>
+                <button class="btn-primary" style="background-color: #F59E0B; color: white;" onclick="alert('Próximamente: Integración con Flow')">⭐ Ser Premium</button>
+            </div>
+        </div>
+    </div>
+    <div id="upsell-modal" class="hidden overlay-modal">
+        <div class="glass-card text-center" style="max-width: 450px;">
+            <h2 style="font-size: 26px; margin-bottom: 15px;">¡Reto Diario Completado! 🎉</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;">
+                ¡Felicidades! Has respondido todas tus preguntas gratuitas de hoy. Vuelve mañana para seguir tu entrenamiento o suscríbete para desbloquear preguntas ilimitadas.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="btn-primary" style="background-color: #F59E0B; color: white;" onclick="alert('Próximamente: Integración con pagos (Flow/Stripe)')">⭐ Ser Premium</button>
+                <button class="btn-primary" style="background-color: #E5E7EB; color: #374151;" onclick="document.getElementById('upsell-modal').classList.add('hidden')">Volver al tablero</button>
+            </div>
+        </div>
+    </div>
+    <div id="logout-confirm-modal" class="hidden overlay-modal">
+        <div class="glass-card text-center" style="max-width: 320px;">
+            <div class="avatar-circle" style="background: #fee2e2; color: #ef4444; width: 60px; height: 60px; line-height: 60px; font-size: 30px; margin-bottom: 10px;">🚪</div>
+            <h3 style="margin-bottom: 10px;">¿Cerrar sesión?</h3>
+            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 14px;">Tendrás que volver a ingresar tu correo y contraseña la próxima vez.</p>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-secondary" style="flex: 1;" onclick="closeLogoutConfirm()">Cancelar</button>
+                <button class="btn-primary" style="flex: 1; background-color: #ef4444; color: white;" onclick="confirmLogout()">Sí, salir</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
