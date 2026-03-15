@@ -278,6 +278,9 @@ function confirmLogout() {
    
        document.getElementById('feedback-explanation').innerText = currentQuestionData.explicacion;
        document.getElementById('feedback-container').classList.remove('hidden');
+       if (window.MathJax) {
+        MathJax.typesetPromise().catch((err) => console.log('Error renderizando explicación: ', err));
+    }
    
        const btnNext = document.getElementById('btn-next-action');
        if (userData.preguntasHoy[currentSubject] >= 3) {
