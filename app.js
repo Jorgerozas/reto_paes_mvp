@@ -228,11 +228,17 @@ function confirmLogout() {
            });
    
            document.getElementById('question-modal').classList.remove('hidden');
-   
-       } catch (error) {
-           alert("No se pudo conectar con el servidor Python.");
-       }
-   }
+           if (window.MathJax) {
+            MathJax.typesetPromise().then(() => {
+                console.log('Matemáticas renderizadas correctamente');
+            }).catch((err) => console.log('Error en MathJax: ', err));
+        }
+        // -------------------------------------------------
+
+    } catch (error) {
+        alert("No se pudo conectar con el servidor Python.");
+    }
+}
    
    async function checkAnswer(selectedIndex, clickedButton) {
        const isCorrect = (selectedIndex === currentQuestionData.indice_correcto);
