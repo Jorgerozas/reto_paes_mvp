@@ -392,25 +392,31 @@ function confirmLogout() {
    }
    
    function shareProgress() {
-       const totalStreak = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
-       const totalHoy = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
-       const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
-   
-       const text = `🔥 ¡Mi entrenamiento en Reto PAES está en llamas! 🚀\n\n` +
-                    `🎯 Aciertos de hoy: ${correctasHoy}/${totalHoy}\n` +
-                    `🏆 Puntaje total de rachas: ${totalStreak}\n\n` +
-                    `Mis rachas activas:\n` +
-                    `📐 M1: ${userData.streaks['M1'] || 0} días\n` +
-                    `📈 M2: ${userData.streaks['M2'] || 0} días\n` +
-                    `📖 Lectora: ${userData.streaks['Lectora'] || 0} días\n` +
-                    `🔬 Ciencias: ${userData.streaks['Ciencias'] || 0} días\n` +
-                    `🏛️ Historia: ${userData.streaks['Historia'] || 0} días\n\n` +
-                    `¡Entrena gratis conmigo aquí! 👇\n` + 
-                    `https://reto-paes-mvp.vercel.app/`; 
-   
-       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-       window.open(url, '_blank');
-   }
+    const totalStreak = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
+    const totalHoy = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
+    const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
+
+    // Función auxiliar para manejar el singular/plural
+    const formatDias = (valor) => {
+        const dias = valor || 0;
+        return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+    };
+
+    const text = `🔥 ¡Mi entrenamiento en Reto PAES está en llamas! 🚀\n\n` +
+                 `🎯 Aciertos de hoy: ${correctasHoy}/${totalHoy}\n` +
+                 `🏆 Puntaje total de rachas: ${totalStreak}\n\n` +
+                 `Mis rachas activas:\n` +
+                 `📐 M1: ${formatDias(userData.streaks['M1'])}\n` +
+                 `📈 M2: ${formatDias(userData.streaks['M2'])}\n` +
+                 `📖 Lectora: ${formatDias(userData.streaks['Lectora'])}\n` +
+                 `🔬 Ciencias: ${formatDias(userData.streaks['Ciencias'])}\n` +
+                 `🏛️ Historia: ${formatDias(userData.streaks['Historia'])}\n\n` +
+                 `¡Entrena gratis conmigo aquí! 👇\n` + 
+                 `https://reto-paes-mvp.vercel.app`; // Actualizado con tu link real
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+}
 
 // REGISTRO DEL SERVICE WORKER PARA PWA
 if ('serviceWorker' in navigator) {
