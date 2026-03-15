@@ -406,7 +406,7 @@ function confirmLogout() {
                     `🔬 Ciencias: ${userData.streaks['Ciencias'] || 0} días\n` +
                     `🏛️ Historia: ${userData.streaks['Historia'] || 0} días\n\n` +
                     `¡Entrena gratis conmigo aquí! 👇\n` + 
-                    `https://tupagina.com`; 
+                    `https://reto-paes-mvp.vercel.app/`; 
    
        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
        window.open(url, '_blank');
