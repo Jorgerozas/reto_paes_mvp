@@ -239,11 +239,29 @@ button:active {
 }
 
 #question-text {
-    font-size: 18px;
+    font-size: 18px; /* Mantiene tu tamaño estándar intacto */
     line-height: 1.5;
     margin-bottom: 25px;
     font-weight: 500;
-}
+    
+    /* --- MAGIA DEL SCROLL --- */
+    max-height: 35vh; /* La pregunta no ocupará más del 35% de la pantalla */
+    overflow-y: auto; /* Activa el scroll vertical SOLO si se pasa de ese límite */
+    padding-right: 10px; /* Evita que el texto choque feo con la barrita de scroll */
+ }
+ 
+ /* --- ESTILOS DE LA BARRA DE SCROLL --- */
+ /* (Combina perfecto con tu estilo Glassmorphism) */
+ #question-text::-webkit-scrollbar {
+    width: 5px;
+ }
+ #question-text::-webkit-scrollbar-track {
+    background: transparent;
+ }
+ #question-text::-webkit-scrollbar-thumb {
+    background-color: rgba(79, 70, 229, 0.3); /* Usa tu color primary (#4F46E5) pero transparente */
+    border-radius: 10px;
+ }
 
 .options-container {
     display: flex;
@@ -302,7 +320,24 @@ button:active {
     font-size: 15px;
     color: var(--text-muted);
     line-height: 1.5;
-}
+    
+    /* --- MAGIA DEL SCROLL PARA LA EXPLICACIÓN --- */
+    max-height: 25vh; /* Ocupará máximo un cuarto de la pantalla */
+    overflow-y: auto; /* Activa el scroll solo si la explicación es muy larga */
+    padding-right: 10px; /* Separación para la barrita */
+ }
+ 
+ /* --- ESTILOS DE LA BARRA DE SCROLL (Mismo estilo Glassmorphism) --- */
+ #feedback-explanation::-webkit-scrollbar {
+    width: 5px;
+ }
+ #feedback-explanation::-webkit-scrollbar-track {
+    background: transparent;
+ }
+ #feedback-explanation::-webkit-scrollbar-thumb {
+    background-color: rgba(79, 70, 229, 0.3); /* Tu color primary (#4F46E5) transparente */
+    border-radius: 10px;
+ }
 
 /* =========================================
    NUEVO FONDO Y ESTILOS VISUALES
