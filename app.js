@@ -433,6 +433,25 @@ function confirmLogout() {
    function closeProfile() {
        document.getElementById('profile-modal').classList.add('hidden');
    }
+
+   function switchProfileTab(tabName) {
+    const tabResumen = document.getElementById('tab-resumen');
+    const tabAnalisis = document.getElementById('tab-analisis');
+    const btnResumen = document.getElementById('btn-tab-resumen');
+    const btnAnalisis = document.getElementById('btn-tab-analisis');
+
+    if (tabName === 'resumen') {
+        tabResumen.classList.remove('hidden');
+        tabAnalisis.classList.add('hidden');
+        btnResumen.classList.add('active');
+        btnAnalisis.classList.remove('active');
+    } else {
+        tabResumen.classList.add('hidden');
+        tabAnalisis.classList.remove('hidden');
+        btnResumen.classList.remove('active');
+        btnAnalisis.classList.add('active');
+    }
+}
    
    function shareProgress() {
     const totalStreak = Object.values(userData.streaks).reduce((a, b) => a + b, 0);

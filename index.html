@@ -121,45 +121,60 @@
         </div>
     </div>
     <div id="profile-modal" class="hidden overlay-modal">
-        <div class="glass-card text-center" style="max-width: 400px;">
-            <div class="modal-header">
-                <h3>Mi Perfil PAES</h3>
+        <div class="glass-card text-center" style="max-width: 400px; padding: 25px 20px; width: 90%; max-height: 85vh; display: flex; flex-direction: column;">
+            
+            <div class="modal-header" style="padding: 0 0 15px 0; margin-bottom: 10px;">
+                <h3 style="margin: 0;">Mi Perfil PAES</h3>
                 <button class="close-btn" onclick="closeProfile()">×</button>
             </div>
-            <div class="modal-body">
-                <div class="avatar-circle">🎓</div>
-                <h2 id="profile-name">Estudiante</h2>
-                <p class="brand-subtitle">Plan Gratuito</p>
-                
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <span class="stat-number" id="stat-total-streak">0</span>
-                        <span class="stat-label">Puntaje de Rachas</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-number" id="stat-today">0/15</span>
-                        <span class="stat-label">Aciertos Hoy</span>
-                    </div>
+            
+            <div style="flex-shrink: 0;">
+                <div class="avatar-circle" style="width: 70px; height: 70px; line-height: 70px; font-size: 35px; margin-bottom: 10px;">🎓</div>
+                <h2 id="profile-name" style="font-size: 22px;">Estudiante</h2>
+                <p class="brand-subtitle" style="margin-bottom: 5px;">Plan Gratuito</p>
+
+                <div class="profile-tabs">
+                    <button class="tab-btn active" id="btn-tab-resumen" onclick="switchProfileTab('resumen')">Resumen</button>
+                    <button class="tab-btn" id="btn-tab-analisis" onclick="switchProfileTab('analisis')">Análisis</button>
                 </div>
-                <h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; text-align: left; padding-left: 5px;">Rachas Activas</h4>
-                <div class="individual-streaks">
-                    <div class="streak-item">M1 <span id="prof-m1">0</span></div>
-                    <div class="streak-item">M2 <span id="prof-m2">0</span></div>
-                    <div class="streak-item">LEC <span id="prof-lec">0</span></div>
-                    <div class="streak-item">CIE <span id="prof-cie">0</span></div>
-                    <div class="streak-item">HIS <span id="prof-his">0</span></div>
-                </div>
-                <h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; letter-spacing: 1px; text-align: left; padding-left: 5px;">Análisis por Materia</h4>
-                
-                <div id="category-stats-container" style="background: rgba(255, 255, 255, 0.5); padding: 15px; border-radius: 16px; border: 1px solid rgba(79, 70, 229, 0.1); margin-bottom: 20px; text-align: left; max-height: 200px; overflow-y: auto;">
-                    <div id="category-stats-content">
-                        <p style="font-size: 13px; color: var(--text-muted); text-align: center;">Analizando tu rendimiento...</p>
-                    </div>
-                </div>      
-                <button class="btn-primary" style="background-color: #25D366; color: white; margin-bottom: 12px;" onclick="shareProgress()">📲 Compartir en WhatsApp</button>
-                <button class="btn-primary" style="background-color: #F59E0B; color: white;" onclick="alert('Próximamente: Integración con Flow')">⭐ Ser Premium</button>
             </div>
-        </div>
+
+            <div class="tab-content-container" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; padding-bottom: 10px;">
+                
+                <div id="tab-resumen">
+                    <div class="stats-grid" style="margin-top: 5px;">
+                        <div class="stat-box">
+                            <span class="stat-number" id="stat-total-streak">0</span>
+                            <span class="stat-label">Puntaje de Rachas</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-number" id="stat-today">0/15</span>
+                            <span class="stat-label">Aciertos Hoy</span>
+                        </div>
+                    </div>
+                    
+                    <h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; text-align: left; padding-left: 5px;">Rachas Activas</h4>
+                    <div class="individual-streaks">
+                        <div class="streak-item">M1 <span id="prof-m1">0</span></div>
+                        <div class="streak-item">M2 <span id="prof-m2">0</span></div>
+                        <div class="streak-item">LEC <span id="prof-lec">0</span></div>
+                        <div class="streak-item">CIE <span id="prof-cie">0</span></div>
+                        <div class="streak-item">HIS <span id="prof-his">0</span></div>
+                    </div>
+                                    
+                    <button class="btn-primary" style="background-color: #25D366; color: white; margin-bottom: 12px; width: 100%;" onclick="shareProgress()">📲 Compartir en WhatsApp</button>
+                    <button class="btn-primary" style="background-color: #F59E0B; color: white; width: 100%;" onclick="alert('Próximamente: Integración con Flow')">⭐ Ser Premium</button>
+                </div>
+
+                <div id="tab-analisis" class="hidden text-left">
+                    <div id="category-stats-container">
+                        <div id="category-stats-content">
+                            <p style="font-size: 13px; color: var(--text-muted); text-align: center;">Calculando tus estadísticas...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div> </div>
     </div>
     <div id="upsell-modal" class="hidden overlay-modal">
         <div class="glass-card text-center" style="max-width: 450px;">
