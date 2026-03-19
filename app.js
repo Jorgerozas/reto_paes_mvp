@@ -369,23 +369,66 @@ function confirmLogout() {
    /* =========================================
       4. PERFIL Y GAMIFICACIÓN
       ========================================= */
-   function openProfile() {
-       const totalStreak = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
-       const totalHoy = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
-       const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0); 
-       
-       document.getElementById('profile-name').innerText = document.getElementById('user-name-display').innerText;
-       document.getElementById('stat-total-streak').innerText = totalStreak;
-       document.getElementById('stat-today').innerText = `${correctasHoy}/${totalHoy}`; 
-       
-       document.getElementById('prof-m1').innerText = userData.streaks['M1'] || 0;
-       document.getElementById('prof-m2').innerText = userData.streaks['M2'] || 0;
-       document.getElementById('prof-lec').innerText = userData.streaks['Lectora'] || 0;
-       document.getElementById('prof-cie').innerText = userData.streaks['Ciencias'] || 0;
-       document.getElementById('prof-his').innerText = userData.streaks['Historia'] || 0;
-       
-       document.getElementById('profile-modal').classList.remove('hidden');
-   }
+      async function openProfile() {
+        const totalStreak = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
+        const totalHoy = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
+        const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0); 
+        
+        document.getElementById('profile-name').innerText = document.getElementById('user-name-display').innerText;
+        document.getElementById('stat-total-streak').innerText = totalStreak;
+        document.getElementById('stat-today').innerText = `${correctasHoy}/${totalHoy}`; 
+        
+        document.getElementById('prof-m1').innerText = userData.streaks['M1'] || 0;
+        document.getElementById('prof-m2').innerText = userData.streaks['M2'] || 0;
+        document.getElementById('prof-lec').innerText = userData.streaks['Lectora'] || 0;
+        document.getElementById('prof-cie').innerText = userData.streaks['Ciencias'] || 0;
+        document.getElementById('prof-his').innerText = userData.streaks['Historia'] || 0;
+        
+        document.getElementById('profile-modal').classList.remove('hidden');
+ 
+        // --- NUEVA LÓGICA: CARGAR FORTALEZAS Y DEBILIDADES ---
+        const statsContent = document.getElementById('category-stats-content');
+        statsContent.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Calculando tus estadísticas...</p>';
+ 
+        try {
+            const response = await fetch(`${API_URL}/estadisticas/${USUARIO_ID}`);
+            if (response.ok) {
+                const data = await response.json();
+                statsContent.innerHTML = ''; // Limpiamos el texto de carga
+ 
+                if (Object.keys(data).length === 0) {
+                    statsContent.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Aún no hay suficientes datos. ¡Sigue entrenando!</p>';
+                    return;
+                }
+ 
+                // Construimos el HTML dinámico
+                for (const [materia, categorias] of Object.entries(data)) {
+                    let htmlMateria = `<div style="margin-bottom: 15px;">
+                                        <strong style="font-size: 14px; color: var(--primary); display: block; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">${materia}</strong>`;
+                    
+                    categorias.forEach(cat => {
+                        // Lógica de colores: >= 50% es verde, < 50% es rojo
+                        const isGood = cat.porcentaje >= 50;
+                        const textColor = isGood ? 'var(--success)' : 'var(--error)';
+                        const bgColor = isGood ? '#D1FAE5' : '#FEE2E2'; // Fondos claritos para las "pastillas"
+ 
+                        htmlMateria += `
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; align-items: center;">
+                                <span style="color: var(--text-main); flex: 1;">${cat.categoria}</span>
+                                <span style="color: ${textColor}; font-weight: bold; font-size: 12px; background: ${bgColor}; padding: 2px 8px; border-radius: 10px;">${cat.porcentaje}% (${cat.texto})</span>
+                            </div>
+                        `;
+                    });
+                    htmlMateria += `</div>`;
+                    statsContent.innerHTML += htmlMateria;
+                }
+            } else {
+                statsContent.innerHTML = '<p style="font-size: 13px; color: var(--error); text-align: center;">No pudimos cargar tu análisis.</p>';
+            }
+        } catch (error) {
+            statsContent.innerHTML = '<p style="font-size: 13px; color: var(--error); text-align: center;">Error de conexión.</p>';
+        }
+    }
    
    function closeProfile() {
        document.getElementById('profile-modal').classList.add('hidden');

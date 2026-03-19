@@ -276,3 +276,52 @@ def crear_pregunta(pregunta: NuevaPregunta):
     finally:
         cursor.close()
         conn.close()
+
+# 7. Obtener estadísticas detalladas por materia y categoría (Fortalezas y Debilidades)
+@app.get("/api/estadisticas/{usuario_id}")
+def estadisticas_detalladas(usuario_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Cruzamos el historial de respuestas con los detalles de las preguntas
+        cursor.execute("""
+            SELECT 
+                p.materia, 
+                p.categoria,
+                COUNT(hr.id) as total_intentos,
+                SUM(CASE WHEN hr.fue_correcta THEN 1 ELSE 0 END) as correctas
+            FROM historial_respuestas hr
+            JOIN preguntas p ON hr.pregunta_id = p.id
+            WHERE hr.usuario_id = %s
+            GROUP BY p.materia, p.categoria
+            ORDER BY p.materia, p.categoria;
+        """, (usuario_id,))
+        
+        resultados = cursor.fetchall()
+        
+        # Formateamos los datos para que el Frontend los consuma fácilmente
+        stats = {}
+        for fila in resultados:
+            materia = fila['materia']
+            categoria = fila['categoria']
+            total = fila['total_intentos']
+            # Postgres SUM() devuelve un decimal, lo convertimos a int para evitar errores
+            correctas = int(fila['correctas']) if fila['correctas'] else 0 
+            
+            porcentaje = int((correctas / total) * 100) if total > 0 else 0
+            
+            if materia not in stats:
+                stats[materia] = []
+                
+            stats[materia].append({
+                "categoria": categoria,
+                "porcentaje": porcentaje,
+                "texto": f"{correctas}/{total}"
+            })
+            
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
