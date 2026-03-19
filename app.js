@@ -402,26 +402,43 @@ function confirmLogout() {
                 }
  
                 // Construimos el HTML dinámico
-                for (const [materia, categorias] of Object.entries(data)) {
-                    let htmlMateria = `<div style="margin-bottom: 15px;">
-                                        <strong style="font-size: 14px; color: var(--primary); display: block; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">${materia}</strong>`;
+                // Construimos el HTML dinámico
+               for (const [materia, categorias] of Object.entries(data)) {
+                let htmlMateria = `<div style="margin-bottom: 15px;">
+                                    <strong style="font-size: 14px; color: var(--primary); display: block; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">${materia}</strong>`;
+                
+                categorias.forEach(cat => {
+                    // NUEVA LÓGICA DE 4 COLORES
+                    let textColor, bgColor;
                     
-                    categorias.forEach(cat => {
-                        // Lógica de colores: >= 50% es verde, < 50% es rojo
-                        const isGood = cat.porcentaje >= 50;
-                        const textColor = isGood ? 'var(--success)' : 'var(--error)';
-                        const bgColor = isGood ? '#D1FAE5' : '#FEE2E2'; // Fondos claritos para las "pastillas"
- 
-                        htmlMateria += `
-                            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; align-items: center;">
-                                <span style="color: var(--text-main); flex: 1;">${cat.categoria}</span>
-                                <span style="color: ${textColor}; font-weight: bold; font-size: 12px; background: ${bgColor}; padding: 2px 8px; border-radius: 10px;">${cat.porcentaje}% (${cat.texto})</span>
-                            </div>
-                        `;
-                    });
-                    htmlMateria += `</div>`;
-                    statsContent.innerHTML += htmlMateria;
-                }
+                    if (cat.porcentaje >= 75) {
+                        // Verde (75% a 100%)
+                        textColor = 'var(--success)';
+                        bgColor = '#D1FAE5'; 
+                    } else if (cat.porcentaje >= 50) {
+                        // Amarillo (50% a 74%)
+                        textColor = '#D97706'; 
+                        bgColor = '#FEF3C7'; 
+                    } else if (cat.porcentaje >= 25) {
+                        // Naranjo (25% a 49%)
+                        textColor = '#EA580C'; 
+                        bgColor = '#FFEDD5'; 
+                    } else {
+                        // Rojo (0% a 24%)
+                        textColor = 'var(--error)';
+                        bgColor = '#FEE2E2'; 
+                    }
+
+                    htmlMateria += `
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; align-items: center;">
+                            <span style="color: var(--text-main); flex: 1;">${cat.categoria}</span>
+                            <span style="color: ${textColor}; font-weight: bold; font-size: 12px; background: ${bgColor}; padding: 2px 8px; border-radius: 10px;">${cat.porcentaje}% (${cat.texto})</span>
+                        </div>
+                    `;
+                });
+                htmlMateria += `</div>`;
+                statsContent.innerHTML += htmlMateria;
+            }
             } else {
                 statsContent.innerHTML = '<p style="font-size: 13px; color: var(--error); text-align: center;">No pudimos cargar tu análisis.</p>';
             }
