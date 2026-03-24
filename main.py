@@ -227,15 +227,22 @@ def login_usuario(usuario: UsuarioLogin):
         conn.close()
 
 # 5. Obtener el progreso real del usuario al iniciar sesión (Lógica de 3 preguntas)
+# 5. Obtener el progreso real del usuario al iniciar sesión (Lógica de 3 preguntas)
 @app.get("/api/progreso/{usuario_id}")
 def obtener_progreso(usuario_id: int):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
+        # AQUÍ ESTÁ LA MAGIA: El CASE evalúa si la fecha es menor a ayer (CURRENT_DATE - 1)
         cursor.execute("""
-            SELECT materia, racha_actual, 
-            CASE WHEN ultima_fecha_respuesta = CURRENT_DATE THEN preguntas_hoy ELSE 0 END as preguntas_hoy,
-            CASE WHEN ultima_fecha_respuesta = CURRENT_DATE THEN correctas_hoy ELSE 0 END as correctas_hoy
+            SELECT 
+                materia, 
+                CASE 
+                    WHEN ultima_fecha_respuesta < CURRENT_DATE - 1 THEN 0 
+                    ELSE racha_actual 
+                END as racha_actual,
+                CASE WHEN ultima_fecha_respuesta = CURRENT_DATE THEN preguntas_hoy ELSE 0 END as preguntas_hoy,
+                CASE WHEN ultima_fecha_respuesta = CURRENT_DATE THEN correctas_hoy ELSE 0 END as correctas_hoy
             FROM rachas WHERE usuario_id = %s
         """, (usuario_id,))
         rachas_db = cursor.fetchall()
@@ -243,7 +250,7 @@ def obtener_progreso(usuario_id: int):
         progreso = {
             "streaks": { 'M1': 0, 'M2': 0, 'Lectora': 0, 'Ciencias': 0, 'Historia': 0 },
             "preguntasHoy": { 'M1': 0, 'M2': 0, 'Lectora': 0, 'Ciencias': 0, 'Historia': 0 },
-            "correctasHoy": { 'M1': 0, 'M2': 0, 'Lectora': 0, 'Ciencias': 0, 'Historia': 0 } # ¡NUEVO!
+            "correctasHoy": { 'M1': 0, 'M2': 0, 'Lectora': 0, 'Ciencias': 0, 'Historia': 0 }
         }
 
         for fila in rachas_db:
