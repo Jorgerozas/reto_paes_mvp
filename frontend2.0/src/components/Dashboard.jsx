@@ -30,6 +30,7 @@ export default function Dashboard({ userName, userData, isLoggedIn, onSubjectCli
                 aria-label="Mi Perfil"
               >
                 🎓
+                <span className="avatar-label">Mi Perfil</span>
               </button>
               <button
                 className="logout-btn-header"

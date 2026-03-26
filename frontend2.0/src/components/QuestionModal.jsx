@@ -62,7 +62,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
     return '';
   });
 
-  const isDone = (preguntasHoy || 0) + (answered ? 1 : 0) >= 3;
+  const isDone = (preguntasHoy || 0) >= 3;
 
   const getOptionClass = (idx) => {
     if (!answered) return 'option-btn';
