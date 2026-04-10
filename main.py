@@ -47,6 +47,16 @@ class UsuarioRegistro(BaseModel):
     email: str
     nombre: str
     password: str
+    username: str  # <- NUEVO: Ahora exigimos un nombre de usuario único
+
+class SolicitudAmistad(BaseModel):
+    usuario_origen_id: int
+    usuario_destino_id: int
+
+class RespuestaAmistad(BaseModel):
+    usuario_origen_id: int
+    usuario_destino_id: int
+    estado: str  # 'aceptada' o 'rechazada'
 
 class NuevaPregunta(BaseModel):
     materia: str
@@ -174,27 +184,30 @@ def guardar_respuesta(respuesta: RespuestaUsuario):
 
 # 4. Iniciar sesión o registrar usuario
 # 4A. Ruta para REGISTRAR un nuevo usuario
+# 4A. Ruta para REGISTRAR un nuevo usuario
 @app.post("/api/registro")
 def registrar_usuario(usuario: UsuarioRegistro):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Verificamos si el correo ya existe
-        cursor.execute("SELECT id FROM usuarios WHERE email = %s", (usuario.email,))
+        # Verificamos si el correo O el username ya existen
+        cursor.execute("SELECT id FROM usuarios WHERE email = %s OR username = %s", (usuario.email, usuario.username))
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Este correo ya está registrado")
+            raise HTTPException(status_code=400, detail="Este correo o nombre de usuario ya está registrado")
 
-        # Encriptamos la contraseña de forma nativa convirtiéndola a bytes
+        # Encriptamos la contraseña...
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(usuario.password.encode('utf-8'), salt).decode('utf-8')
 
+        # Insertamos también el username
         cursor.execute(
-            "INSERT INTO usuarios (email, nombre, password_hash) VALUES (%s, %s, %s) RETURNING id", 
-            (usuario.email, usuario.nombre, hashed_password)
+            "INSERT INTO usuarios (email, nombre, username, password_hash) VALUES (%s, %s, %s, %s) RETURNING id", 
+            (usuario.email, usuario.nombre, usuario.username, hashed_password)
         )
         nuevo_id = cursor.fetchone()['id']
         conn.commit()
         return {"mensaje": "Usuario registrado exitosamente", "usuario_id": nuevo_id}
+    # ... resto del bloque try/except igual
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -344,6 +357,104 @@ def volver_premium(usuario_id: int):
         cursor.execute("UPDATE usuarios SET es_premium = TRUE WHERE id = %s", (usuario_id,))
         conn.commit()
         return {"mensaje": "¡Bienvenido a Premium!"}
+    finally:
+        cursor.close()
+        conn.close()
+
+# 8. Buscador de usuarios públicos
+@app.get("/api/usuarios/buscar")
+def buscar_usuarios(q: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Añadimos % a los lados para buscar coincidencias en cualquier parte del texto
+        search_term = f"%{q}%"
+        
+        # OJO: Solo devolvemos datos públicos. ¡Nunca devolver emails o passwords!
+        cursor.execute("""
+            SELECT id, nombre, username, es_premium 
+            FROM usuarios 
+            WHERE username ILIKE %s OR nombre ILIKE %s
+            LIMIT 10;
+        """, (search_term, search_term))
+        
+        resultados = cursor.fetchall()
+        return resultados
+    finally:
+        cursor.close()
+        conn.close()
+
+# 9. Enviar solicitud de amistad
+@app.post("/api/amigos/solicitar")
+def solicitar_amistad(solicitud: SolicitudAmistad):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Insertamos la solicitud, si ya existe una (en cualquier dirección), no hace nada
+        cursor.execute("""
+            INSERT INTO amistades (usuario_id_1, usuario_id_2, estado)
+            VALUES (%s, %s, 'pendiente')
+            ON CONFLICT (usuario_id_1, usuario_id_2) DO NOTHING;
+        """, (solicitud.usuario_origen_id, solicitud.usuario_destino_id))
+        conn.commit()
+        return {"mensaje": "Solicitud enviada correctamente"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail="Error al enviar la solicitud")
+    finally:
+        cursor.close()
+        conn.close()
+
+# 10. Responder a una solicitud de amistad (Aceptar o Rechazar)
+@app.post("/api/amigos/responder")
+def responder_amistad(respuesta: RespuestaAmistad):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        if respuesta.estado == 'rechazada':
+            # Si la rechaza, simplemente borramos el registro para mantener limpia la BD
+            cursor.execute("""
+                DELETE FROM amistades 
+                WHERE usuario_id_1 = %s AND usuario_id_2 = %s
+            """, (respuesta.usuario_origen_id, respuesta.usuario_destino_id))
+        else:
+            # Si la acepta, actualizamos el estado
+            cursor.execute("""
+                UPDATE amistades 
+                SET estado = %s 
+                WHERE usuario_id_1 = %s AND usuario_id_2 = %s
+            """, (respuesta.estado, respuesta.usuario_origen_id, respuesta.usuario_destino_id))
+        
+        conn.commit()
+        return {"mensaje": f"Solicitud {respuesta.estado}"}
+    finally:
+        cursor.close()
+        conn.close()
+
+# 11. Obtener lista de amigos y solicitudes pendientes
+@app.get("/api/amigos/{usuario_id}")
+def obtener_amigos(usuario_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Buscamos amigos aceptados (puede ser que el usuario sea el origen o el destino)
+        cursor.execute("""
+            SELECT u.id, u.username, u.nombre, u.es_premium, a.estado,
+                   CASE WHEN a.usuario_id_1 = %s THEN 'enviada' ELSE 'recibida' END as tipo_solicitud
+            FROM amistades a
+            JOIN usuarios u ON (u.id = a.usuario_id_1 OR u.id = a.usuario_id_2)
+            WHERE (a.usuario_id_1 = %s OR a.usuario_id_2 = %s)
+              AND u.id != %s
+        """, (usuario_id, usuario_id, usuario_id, usuario_id))
+        
+        relaciones = cursor.fetchall()
+        
+        # Filtramos para mandarle al Frontend la data ordenada
+        return {
+            "amigos": [r for r in relaciones if r['estado'] == 'aceptada'],
+            "pendientes_recibidas": [r for r in relaciones if r['estado'] == 'pendiente' and r['tipo_solicitud'] == 'recibida'],
+            "pendientes_enviadas": [r for r in relaciones if r['estado'] == 'pendiente' and r['tipo_solicitud'] == 'enviada']
+        }
     finally:
         cursor.close()
         conn.close()
