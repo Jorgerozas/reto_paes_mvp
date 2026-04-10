@@ -77,7 +77,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
     return '';
   });
 
-  const isDone = (preguntasHoy || 0) >= 3;
+  const isDone = (preguntasHoy || 0) === 3;
 
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
@@ -151,7 +151,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
                 >
                   {loading
                     ? 'Cargando...'
-                    : isDone
+                    : llegaALaMeta
                     ? '¡Materia Completada! 🏆'
                     : 'Siguiente pregunta →'}
                 </button>

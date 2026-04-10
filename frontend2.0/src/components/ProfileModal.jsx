@@ -154,7 +154,7 @@ function aggregateStats(stats) {
   return { subjectPcts, subjectTotals, globalCorrectas, globalTotal };
 }
 
-export default function ProfileModal({ apiUrl, userId, userName, userData, onClose }) {
+export default function ProfileModal({ apiUrl, userId, userName, userData, isPremium, onUpgrade, onClose }) {
   const [activeTab, setActiveTab]     = useState('resumen');
   const [stats, setStats]             = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -335,7 +335,7 @@ export default function ProfileModal({ apiUrl, userId, userName, userData, onClo
 
           <div className="profile-avatar">🎓</div>
           <p className="profile-name">{userName}</p>
-          <p className="profile-plan">✨ Plan Gratuito</p>
+          <p className="profile-plan">{isPremium ? '🌟 Plan Premium' : '✨ Plan Gratuito'}</p>
 
           <div className="profile-tabs">
             <button
@@ -390,12 +390,26 @@ export default function ProfileModal({ apiUrl, userId, userName, userData, onClo
                 <button className="btn-whatsapp" onClick={shareProgress}>
                   📲 Compartir en WhatsApp
                 </button>
-                <button
-                  className="btn-premium"
-                  onClick={() => alert('Próximamente: Integración con Flow')}
-                >
-                  ⭐ Ser Premium — Preguntas Ilimitadas
-                </button>
+                {/* Solo mostramos el botón si NO es premium */}
+                {!isPremium && (
+                  <button
+                    className="btn-premium"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${apiUrl}/upgrade/${userId}`, { method: 'POST' });
+                        if (res.ok) {
+                          onUpgrade();
+                        } else {
+                          alert('Error al actualizar.');
+                        }
+                      } catch {
+                        alert('Error de conexión.');
+                      }
+                    }}
+                  >
+                    ⭐ Ser Premium — Preguntas Ilimitadas
+                  </button>
+                )}
               </div>
             </>
           )}
