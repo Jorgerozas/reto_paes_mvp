@@ -45,11 +45,12 @@ export default function AuthModal({ apiUrl, onLogin }) {
       const progresoRes = await fetch(`${apiUrl}/progreso/${data.usuario_id}`);
       const progreso    = progresoRes.ok ? await progresoRes.json() : null;
 
+      // AQUÍ ESTÁ EL CAMBIO: Agregamos data.es_premium al final de la función
       onLogin(data.usuario_id, displayName, progreso || {
         streaks:      { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
         preguntasHoy: { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
         correctasHoy: { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
-      });
+      }, data.es_premium || false);
     } catch {
       setError('No se pudo conectar con el servidor.');
     } finally {
