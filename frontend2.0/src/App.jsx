@@ -5,6 +5,7 @@ import QuestionModal from './components/QuestionModal';
 import ProfileModal from './components/ProfileModal';
 import UpsellModal from './components/UpsellModal';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
+import SummaryModal from './components/SummaryModal'; 
 
 const API_URL = 'https://reto-paes-mvp.onrender.com/api';
 
