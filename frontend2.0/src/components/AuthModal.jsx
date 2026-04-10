@@ -43,15 +43,19 @@ export default function AuthModal({ apiUrl, onLogin }) {
         return;
       }
 
+      // Capturamos el nombre y el username dependiendo de si es login o registro
       const displayName = isLoginMode ? data.nombre : name;
+      const displayAlias = isLoginMode ? data.username : data.username; // Usamos data.username del backend
+
       localStorage.setItem('retoPaes_userId', data.usuario_id);
       localStorage.setItem('retoPaes_userName', displayName);
+      localStorage.setItem('retoPaes_userAlias', displayAlias); // <-- Guardamos el username en caché
 
       const progresoRes = await fetch(`${apiUrl}/progreso/${data.usuario_id}`);
       const progreso    = progresoRes.ok ? await progresoRes.json() : null;
 
-      // Mantenemos el estado premium que agregamos en los pasos anteriores
-      onLogin(data.usuario_id, displayName, progreso || {
+      // OJO AQUÍ: Agregamos displayAlias como el TERCER parámetro
+      onLogin(data.usuario_id, displayName, displayAlias, progreso || {
         streaks:      { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
         preguntasHoy: { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
         correctasHoy: { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },

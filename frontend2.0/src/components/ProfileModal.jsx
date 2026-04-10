@@ -154,7 +154,7 @@ function aggregateStats(stats) {
   return { subjectPcts, subjectTotals, globalCorrectas, globalTotal };
 }
 
-export default function ProfileModal({ apiUrl, userId, userName, userData, isPremium, onUpgrade, onClose }) {
+export default function ProfileModal({ apiUrl, userId, userName, userAlias, userData, isPremium, onUpgrade, onClose }) {
   const [activeTab, setActiveTab]     = useState('resumen');
   const [stats, setStats]             = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -335,7 +335,11 @@ export default function ProfileModal({ apiUrl, userId, userName, userData, isPre
 
           <div className="profile-avatar">🎓</div>
           <p className="profile-name">{userName}</p>
-          <p className="profile-plan">{isPremium ? '🌟 Plan Premium' : '✨ Plan Gratuito'}</p>
+          {/* NUEVO TEXTO DE USERNAME */}
+          <p className="profile-username" style={{ fontSize: '14px', color: '#D1D5DB', marginTop: '-4px', marginBottom: '8px' }}>
+            @{userAlias}
+          </p>
+          <p className="profile-plan">{isPremium ? '🌟 Plan Premium (Ilimitado)' : '✨ Plan Gratuito'}</p>
 
           <div className="profile-tabs">
             <button
