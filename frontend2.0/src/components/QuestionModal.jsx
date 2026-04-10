@@ -77,7 +77,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
     return '';
   });
 
-  const isDone = (preguntasHoy || 0) === 3;
+  const llegaALaMeta = (preguntasHoy || 0) === 3;
 
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
