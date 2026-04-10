@@ -227,6 +227,7 @@ export default function App() {
         onSubjectClick={openQuestion}
         onProfileClick={() => setShowProfile(true)}
         onLogoutClick={() => setShowLogoutConfirm(true)}
+        onSummaryClick={() => setShowSummary(true)}
       />
 
       {!isLoggedIn && (
@@ -250,6 +251,12 @@ export default function App() {
           userId={userId}
           userName={userName}
           userData={userData}
+          isPremium={isPremium} 
+          onUpgrade={() => {
+            setIsPremium(true);
+            localStorage.setItem('retoPaes_isPremium', 'true');
+            alert('¡Felicidades! Ya eres Premium desde tu perfil.');
+          }}
           onClose={() => setShowProfile(false)}
         />
       )}
@@ -259,12 +266,16 @@ export default function App() {
           userId={userId}
           onClose={() => setShowUpsell(false)} 
           onUpgrade={() => {
-            setIsPremium(true); // Actualiza el estado a premium
-            localStorage.setItem('retoPaes_isPremium', 'true'); // Lo guarda en caché
-            setShowUpsell(false); // Cierra el modal
+            setIsPremium(true);
+            localStorage.setItem('retoPaes_isPremium', 'true');
+            setShowUpsell(false);
             alert('¡Felicidades! Ya eres Premium. Tienes preguntas ilimitadas.');
           }}
         />
+      )}
+
+      {showSummary && (
+        <SummaryModal onClose={() => setShowSummary(false)} />
       )}
 
       {showLogoutConfirm && (
