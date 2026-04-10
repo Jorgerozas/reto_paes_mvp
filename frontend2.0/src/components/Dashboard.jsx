@@ -6,7 +6,7 @@ const SUBJECTS = [
   { key: 'Historia', label: 'Historia y Cs. Sociales',emoji: '🏛️', color: '#FDF4FF', iconColor: '#A855F7' },
 ];
 
-export default function Dashboard({ userName, userData, isLoggedIn, onSubjectClick, onProfileClick, onLogoutClick }) {
+export default function Dashboard({ userName, userData, isLoggedIn, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick }) {
   const totalHoy     = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
   const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
   const totalStreak  = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
@@ -55,6 +55,16 @@ export default function Dashboard({ userName, userData, isLoggedIn, onSubjectCli
           </div>
         )}
       </div>
+
+      {/* ── Summary Button ── */}
+      <button className="summary-open-btn" onClick={onSummaryClick}>
+        <span className="summary-open-icon">📚</span>
+        <div className="summary-open-text">
+          <span className="summary-open-title">Resúmenes</span>
+          <span className="summary-open-sub">Fórmulas y contenidos clave</span>
+        </div>
+        <span className="summary-open-chevron">›</span>
+      </button>
 
       {/* ── Subject Cards ── */}
       <p className="section-label">Materias</p>

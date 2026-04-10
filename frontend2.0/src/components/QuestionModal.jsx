@@ -16,14 +16,29 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
   const [isCorrect, setIsCorrect] = useState(false);
   const [flash, setFlash]         = useState(false);
   const [loading, setLoading]     = useState(false);
+  const [elapsed, setElapsed]     = useState(0);
   const updatedRef = useRef(null);
+  const timerRef = useRef(null);
 
+  // Reset state when question changes
   useEffect(() => {
     setSelected(null);
     setAnswered(false);
     setIsCorrect(false);
     setFlash(false);
+    setElapsed(0);
   }, [question?.id]);
+
+  // Timer: counts up every second until the student answers
+  useEffect(() => {
+    if (!question || answered) {
+      clearInterval(timerRef.current);
+      return;
+    }
+    setElapsed(0);
+    timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    return () => clearInterval(timerRef.current);
+  }, [question?.id, answered]);
 
   useEffect(() => {
     if (window.MathJax && question) {
@@ -64,6 +79,12 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
 
   const isDone = (preguntasHoy || 0) >= 3;
 
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
   const getOptionClass = (idx) => {
     if (!answered) return 'option-btn';
     if (idx === question.indice_correcto) return 'option-btn correct';
@@ -87,7 +108,12 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
               </span>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className={`question-timer${answered ? ' timer-stopped' : ''}`}>
+              ⏱ {formatTime(elapsed)}
+            </span>
+            <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+          </div>
         </div>
 
         {/* Body */}

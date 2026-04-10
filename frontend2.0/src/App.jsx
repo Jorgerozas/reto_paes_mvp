@@ -5,6 +5,7 @@ import QuestionModal from './components/QuestionModal';
 import ProfileModal from './components/ProfileModal';
 import UpsellModal from './components/UpsellModal';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
+import SummaryModal from './components/SummaryModal';
 
 const API_URL = 'https://reto-paes-mvp.onrender.com/api';
 
@@ -25,10 +26,13 @@ export default function App() {
   const [showProfile, setShowProfile]             = useState(false);
   const [showUpsell, setShowUpsell]               = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSummary, setShowSummary]             = useState(false);
 
   // Question state
   const [currentSubject, setCurrentSubject]   = useState('');
   const [currentQuestion, setCurrentQuestion] = useState(null);
+  // Cache: keeps the current question per subject so closing/reopening doesn't lose it
+  const [cachedQuestions, setCachedQuestions]  = useState({});
 
   // Restore session on mount
   useEffect(() => {
@@ -76,6 +80,12 @@ export default function App() {
       return;
     }
     setCurrentSubject(subject);
+    // Reuse cached question if available (user closed and reopened)
+    if (cachedQuestions[subject]) {
+      setCurrentQuestion(cachedQuestions[subject]);
+      setShowQuestion(true);
+      return;
+    }
     await loadQuestion(subject);
     setShowQuestion(true);
   };
@@ -90,6 +100,7 @@ export default function App() {
       }
       const q = await res.json();
       setCurrentQuestion(q);
+      setCachedQuestions(prev => ({ ...prev, [subject]: q }));
       return true;
     } catch {
       alert('No se pudo conectar con el servidor.');
@@ -137,6 +148,8 @@ export default function App() {
 
   const handleNextQuestion = async (updatedData) => {
     const count = updatedData.preguntasHoy[currentSubject] || 0;
+    // Clear cache — the answered question should not be reused
+    setCachedQuestions(prev => { const next = { ...prev }; delete next[currentSubject]; return next; });
     if (count < 3) {
       setCurrentQuestion(null);
       await loadQuestion(currentSubject);
@@ -172,7 +185,7 @@ export default function App() {
 
   const closeQuestion = () => {
     setShowQuestion(false);
-    setCurrentQuestion(null);
+    // Don't clear currentQuestion — it stays in cachedQuestions so reopening preserves progress
   };
 
   // ── RENDER ────────────────────────────────────────────────────────────
@@ -185,6 +198,7 @@ export default function App() {
         onSubjectClick={openQuestion}
         onProfileClick={() => setShowProfile(true)}
         onLogoutClick={() => setShowLogoutConfirm(true)}
+        onSummaryClick={() => setShowSummary(true)}
       />
 
       {!isLoggedIn && (
@@ -214,6 +228,10 @@ export default function App() {
 
       {showUpsell && (
         <UpsellModal onClose={() => setShowUpsell(false)} />
+      )}
+
+      {showSummary && (
+        <SummaryModal onClose={() => setShowSummary(false)} />
       )}
 
       {showLogoutConfirm && (
