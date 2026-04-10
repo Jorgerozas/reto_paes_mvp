@@ -206,7 +206,7 @@ def registrar_usuario(usuario: UsuarioRegistro):
         )
         nuevo_id = cursor.fetchone()['id']
         conn.commit()
-        return {"mensaje": "Usuario registrado exitosamente", "usuario_id": nuevo_id}
+        return {"mensaje": "Usuario registrado exitosamente", "usuario_id": nuevo_id, "username": usuario.username}
     # ... resto del bloque try/except igual
     except Exception as e:
         conn.rollback()
@@ -222,7 +222,7 @@ def login_usuario(usuario: UsuarioLogin):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        cursor.execute("SELECT id, nombre, password_hash, es_premium FROM usuarios WHERE email = %s", (usuario.email,))
+        cursor.execute("SELECT id, nombre, username, password_hash, es_premium FROM usuarios WHERE email = %s", (usuario.email,))
         user_db = cursor.fetchone()
         if not user_db:
             raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
@@ -236,6 +236,7 @@ def login_usuario(usuario: UsuarioLogin):
             "mensaje": "Inicio de sesión exitoso", 
             "usuario_id": user_db['id'], 
             "nombre": user_db['nombre'],
+            "username": user_db['username'],
             "es_premium": user_db['es_premium'] # <- NUEVO
         }
     finally:
