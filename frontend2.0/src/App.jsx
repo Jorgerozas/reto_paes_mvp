@@ -5,7 +5,7 @@ import QuestionModal from './components/QuestionModal';
 import ProfileModal from './components/ProfileModal';
 import UpsellModal from './components/UpsellModal';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
-import SummaryModal from './components/SummaryModal'; 
+import SummaryModal from './components/SummaryModal';
 
 const API_URL = 'https://reto-paes-mvp.onrender.com/api';
 
@@ -18,9 +18,10 @@ const INITIAL_USER_DATA = {
 export default function App() {
   const [userId, setUserId]       = useState(null);
   const [userName, setUserName]   = useState('Estudiante');
+  const [userAlias, setUserAlias] = useState(''); // <-- NUEVO ESTADO PARA EL USERNAME
   const [userData, setUserData]   = useState(INITIAL_USER_DATA);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isPremium, setIsPremium]   = useState(false); // <- NUEVO ESTADO PREMIUM
+  const [isPremium, setIsPremium]   = useState(false);
 
   // Modals
   const [showQuestion, setShowQuestion]           = useState(false);
@@ -32,15 +33,14 @@ export default function App() {
   // Question state
   const [currentSubject, setCurrentSubject]   = useState('');
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  // Cache: keeps the current question per subject so closing/reopening doesn't lose it
   const [cachedQuestions, setCachedQuestions]  = useState({});
 
   // Restore session on mount
   useEffect(() => {
-    const savedId   = localStorage.getItem('retoPaes_userId');
-    const savedName = localStorage.getItem('retoPaes_userName');
-    // Recuperamos el estado premium (guardado como string en localStorage)
-    const savedPremium = localStorage.getItem('retoPaes_isPremium') === 'true'; 
+    const savedId      = localStorage.getItem('retoPaes_userId');
+    const savedName    = localStorage.getItem('retoPaes_userName');
+    const savedAlias   = localStorage.getItem('retoPaes_userAlias'); // <-- Recuperar username
+    const savedPremium = localStorage.getItem('retoPaes_isPremium') === 'true';
 
     if (savedId && savedName) {
       fetch(`${API_URL}/progreso/${savedId}`)
@@ -49,8 +49,9 @@ export default function App() {
           if (data) {
             setUserId(savedId);
             setUserName(capitalize(savedName));
+            setUserAlias(savedAlias || ''); // <-- Guardarlo en el estado
             setUserData(data);
-            setIsPremium(savedPremium); // <- RESTAURAMOS PREMIUM
+            setIsPremium(savedPremium);
             setIsLoggedIn(true);
           }
         })
@@ -61,17 +62,17 @@ export default function App() {
   const capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
   // ── AUTH ──────────────────────────────────────────────────────────────
-  // Agregamos el parámetro premiumStatus
-  const handleLogin = async (id, name, data, premiumStatus) => {
+  const handleLogin = async (id, name, alias, data, premiumStatus) => {
     setUserId(id);
     setUserName(capitalize(name));
+    setUserAlias(alias); // <-- Actualizar estado del username
     setUserData(data);
-    setIsPremium(premiumStatus); // <- GUARDAMOS EN EL ESTADO
+    setIsPremium(premiumStatus);
     setIsLoggedIn(true);
-    
-    // Guardamos en localStorage para mantener sesión
+
     localStorage.setItem('retoPaes_userId', id);
     localStorage.setItem('retoPaes_userName', name);
+    localStorage.setItem('retoPaes_userAlias', alias); // <-- Guardarlo en caché
     localStorage.setItem('retoPaes_isPremium', premiumStatus);
   };
 
@@ -79,27 +80,27 @@ export default function App() {
     setIsLoggedIn(false);
     setUserId(null);
     setUserName('Estudiante');
+    setUserAlias('');
     setUserData(INITIAL_USER_DATA);
-    setIsPremium(false); // <- LIMPIAMOS ESTADO
+    setIsPremium(false);
+    
     localStorage.removeItem('retoPaes_userId');
     localStorage.removeItem('retoPaes_userName');
-    localStorage.removeItem('retoPaes_isPremium'); // <- LIMPIAMOS CACHÉ
+    localStorage.removeItem('retoPaes_userAlias');
+    localStorage.removeItem('retoPaes_isPremium');
     setShowLogoutConfirm(false);
   };
 
   // ── QUESTIONS ────────────────────────────────────────────────────────
   const openQuestion = async (subject) => {
-    // AQUÍ ESTÁ EL CAMBIO: Solo bloqueamos si NO es premium y ya hizo 3
     if (!isPremium && (userData.preguntasHoy[subject] || 0) >= 3) {
-      // Opcional: Podrías disparar setShowUpsell(true) aquí mismo para ofrecer premium
       alert('Ya completaste tus 3 preguntas gratuitas de hoy para esta materia. ¡Hazte Premium para seguir practicando!');
       setShowUpsell(true);
       return;
     }
-    
+
     setCurrentSubject(subject);
-    
-    // Reuse cached question if available (user closed and reopened)
+
     if (cachedQuestions[subject]) {
       setCurrentQuestion(cachedQuestions[subject]);
       setShowQuestion(true);
@@ -113,12 +114,13 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/pregunta/${subject}/${userId}`);
       if (!res.ok) {
-        if (res.status === 404) alert('¡Felicidades! Ya respondiste todas las preguntas disponibles para esta materia.');
+        if (res.status === 404) alert('¡Felicidades! Ya respondiste todas las preguntas de esta materia.');
         else alert('Hubo un error al buscar la pregunta.');
         return false;
       }
       const q = await res.json();
       setCurrentQuestion(q);
+      setCachedQuestions(prev => ({ ...prev, [subject]: q }));
       return true;
     } catch {
       alert('No se pudo conectar con el servidor.');
@@ -166,20 +168,16 @@ export default function App() {
 
   const handleNextQuestion = async (updatedData) => {
     const count = updatedData.preguntasHoy[currentSubject] || 0;
-    // Clear cache — the answered question should not be reused
     setCachedQuestions(prev => { const next = { ...prev }; delete next[currentSubject]; return next; });
-    
-    // SIEMPRE celebramos al llegar EXACTAMENTE a la meta 3 (sea premium o gratis)
+
+    // Siempre celebramos si llega exactamente a 3
     if (count === 3) {
       triggerConfetti(updatedData);
     }
 
-    // LÓGICA DE CONTINUACIÓN O BLOQUEO
     if (!isPremium && count >= 3) {
-      // Si es gratis y llegó al límite, cerramos el modal (el confeti mostrará el upsell)
       setShowQuestion(false);
     } else {
-      // Si es Premium (o si es gratis y lleva menos de 3), cargamos la siguiente
       setCurrentQuestion(null);
       await loadQuestion(currentSubject);
     }
@@ -203,8 +201,7 @@ export default function App() {
             const particleCount = 50 * (timeLeft / duration);
             window.confetti({ ...defaults, particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } });
           }, 250);
-          
-          // AQUÍ ESTÁ EL CAMBIO: Solo mostramos el Upsell de fin de día si NO es premium
+
           if (!isPremium) {
             setTimeout(() => setShowUpsell(true), 1000);
           }
@@ -215,7 +212,6 @@ export default function App() {
 
   const closeQuestion = () => {
     setShowQuestion(false);
-    setCurrentQuestion(null);
   };
 
   // ── RENDER ────────────────────────────────────────────────────────────
@@ -251,8 +247,9 @@ export default function App() {
           apiUrl={API_URL}
           userId={userId}
           userName={userName}
+          userAlias={userAlias} // <-- AQUÍ LE PASAMOS EL USERNAME AL PERFIL
           userData={userData}
-          isPremium={isPremium} 
+          isPremium={isPremium}
           onUpgrade={() => {
             setIsPremium(true);
             localStorage.setItem('retoPaes_isPremium', 'true');
@@ -263,9 +260,9 @@ export default function App() {
       )}
 
       {showUpsell && (
-        <UpsellModal 
+        <UpsellModal
           userId={userId}
-          onClose={() => setShowUpsell(false)} 
+          onClose={() => setShowUpsell(false)}
           onUpgrade={() => {
             setIsPremium(true);
             localStorage.setItem('retoPaes_isPremium', 'true');
