@@ -209,10 +209,8 @@ def login_usuario(usuario: UsuarioLogin):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # ¡AQUÍ ESTÁ EL CAMBIO! Agregamos "nombre" a la búsqueda de SQL
-        cursor.execute("SELECT id, nombre, password_hash FROM usuarios WHERE email = %s", (usuario.email,))
+        cursor.execute("SELECT id, nombre, password_hash, es_premium FROM usuarios WHERE email = %s", (usuario.email,))
         user_db = cursor.fetchone()
-
         if not user_db:
             raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
 
@@ -221,7 +219,12 @@ def login_usuario(usuario: UsuarioLogin):
             raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
 
         # ¡AQUÍ TAMBIÉN! Devolvemos el nombre en el JSON
-        return {"mensaje": "Inicio de sesión exitoso", "usuario_id": user_db['id'], "nombre": user_db['nombre']}
+        return {
+            "mensaje": "Inicio de sesión exitoso", 
+            "usuario_id": user_db['id'], 
+            "nombre": user_db['nombre'],
+            "es_premium": user_db['es_premium'] # <- NUEVO
+        }
     finally:
         cursor.close()
         conn.close()
@@ -329,6 +332,18 @@ def estadisticas_detalladas(usuario_id: int):
         return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.post("/api/upgrade/{usuario_id}")
+def volver_premium(usuario_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE usuarios SET es_premium = TRUE WHERE id = %s", (usuario_id,))
+        conn.commit()
+        return {"mensaje": "¡Bienvenido a Premium!"}
     finally:
         cursor.close()
         conn.close()
