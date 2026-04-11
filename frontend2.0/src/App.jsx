@@ -27,6 +27,7 @@ export default function App() {
   const [showQuestion, setShowQuestion]           = useState(false);
   const [showProfile, setShowProfile]             = useState(false);
   const [showUpsell, setShowUpsell]               = useState(false);
+  const [upsellType, setUpsellType]               = useState('all');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSummary, setShowSummary]             = useState(false);
 
@@ -95,6 +96,7 @@ export default function App() {
   const openQuestion = async (subject) => {
     if (!isPremium && (userData.preguntasHoy[subject] || 0) >= 3) {
       alert('Ya completaste tus 3 preguntas gratuitas de hoy para esta materia. ¡Hazte Premium para seguir practicando!');
+      setUpsellType('subject');
       setShowUpsell(true);
       return;
     }
@@ -206,6 +208,7 @@ export default function App() {
           }, 250);
 
           if (!isPremium) {
+            setUpsellType('all');
             setTimeout(() => setShowUpsell(true), 1000);
           }
         }, 500);
@@ -266,6 +269,7 @@ export default function App() {
       {showUpsell && (
         <UpsellModal
           userId={userId}
+          type={upsellType}
           onClose={() => setShowUpsell(false)}
           onUpgrade={() => {
             setIsPremium(true);
