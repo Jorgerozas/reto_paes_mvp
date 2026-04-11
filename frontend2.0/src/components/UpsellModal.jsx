@@ -1,18 +1,18 @@
 import { useState } from 'react';
 
-export default function UpsellModal({ userId, onClose, onUpgrade }) {
+// Recibimos la propiedad "type"
+export default function UpsellModal({ userId, type, onClose, onUpgrade }) {
   const [loading, setLoading] = useState(false);
 
   const handleVolversePremium = async () => {
     setLoading(true);
     try {
-      // Llamamos al nuevo endpoint de FastAPI
       const res = await fetch(`https://reto-paes-mvp.onrender.com/api/upgrade/${userId}`, {
         method: 'POST'
       });
       
       if (res.ok) {
-        onUpgrade(); // Le avisa a App.jsx que el usuario ahora es Premium
+        onUpgrade();
       } else {
         alert("Hubo un problema al intentar actualizar tu cuenta.");
       }
@@ -23,17 +23,20 @@ export default function UpsellModal({ userId, onClose, onUpgrade }) {
     }
   };
 
+  // Evaluamos de qué tipo es el bloqueo
+  const isAll = type === 'all';
+  const titulo = isAll ? '¡Reto Diario Completado!' : '¡Límite Alcanzado!';
+  const texto = isAll
+    ? '¡Increíble! Terminaste todas tus preguntas gratuitas de hoy en todas las materias. Vuelve mañana para mantener tus rachas, o suscríbete al plan Premium para entrenar sin límites.'
+    : 'Ya completaste tus 3 preguntas gratuitas de hoy para esta materia. Pásate a Premium para seguir practicando de forma ilimitada, o entrena otra materia para subir tu puntaje de racha.';
+
   return (
     <div className="overlay-modal">
       <div className="glass-card">
         <div className="upsell-card">
-          <span className="upsell-emoji">🎉</span>
-          <h2 className="upsell-title">¡Reto Diario Completado!</h2>
-          <p className="upsell-text">
-            ¡Increíble! Terminaste todas tus preguntas gratuitas de hoy.
-            Vuelve mañana para mantener tu racha, o suscríbete al plan
-            Premium para entrenar sin límites.
-          </p>
+          <span className="upsell-emoji">{isAll ? '🎉' : '🔒'}</span>
+          <h2 className="upsell-title">{titulo}</h2>
+          <p className="upsell-text">{texto}</p>
           <div className="upsell-actions">
             <button
               className="btn-premium"
