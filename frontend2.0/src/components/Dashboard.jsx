@@ -6,7 +6,8 @@ const SUBJECTS = [
   { key: 'Historia', label: 'Historia y Cs. Sociales',emoji: '🏛️', color: '#FDF4FF', iconColor: '#A855F7' },
 ];
 
-export default function Dashboard({ userName, userData, isLoggedIn, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick }) {
+// Recibimos isPremium en los props
+export default function Dashboard({ userName, userData, isLoggedIn, isPremium, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick }) {
   const totalHoy     = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
   const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
   const totalStreak  = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
@@ -75,10 +76,27 @@ export default function Dashboard({ userName, userData, isLoggedIn, onSubjectCli
           const isDone = count >= 3;
           const pct    = Math.min((count / 3) * 100, 100);
 
+          // LÓGICA NUEVA: Si es premium, no le ponemos la clase 'completed' que opaca la tarjeta
+          const cardClass = `subject-card${isDone && !isPremium ? ' completed' : ''}`;
+
+          // Personalizamos el texto y color del botoncito (chip)
+          let chipText = `${count}/3`;
+          let chipClass = 'chip-pending';
+
+          if (isDone) {
+            if (isPremium) {
+              chipText = `🔥 ${count} (Modo Infinito)`;
+              chipClass = 'chip-pending'; // Mantiene el color naranjo/vivo
+            } else {
+              chipText = '✓ Listo';
+              chipClass = 'chip-done'; // Se pone gris
+            }
+          }
+
           return (
             <div
               key={s.key}
-              className={`subject-card${isDone ? ' completed' : ''}`}
+              className={cardClass}
               onClick={() => onSubjectClick(s.key)}
               role="button"
               tabIndex={0}
@@ -101,8 +119,8 @@ export default function Dashboard({ userName, userData, isLoggedIn, onSubjectCli
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className={`status-chip ${isDone ? 'chip-done' : 'chip-pending'}`}>
-                    {isDone ? '✓ Listo' : `${count}/3`}
+                  <span className={`status-chip ${chipClass}`}>
+                    {chipText}
                   </span>
                 </div>
               </div>
