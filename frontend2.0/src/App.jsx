@@ -175,9 +175,12 @@ export default function App() {
       triggerConfetti(updatedData);
     }
 
-    if (!isPremium && count >= 3) {
+    // Cierra el modal SIEMPRE al llegar a 3 (para que el Premium vea su logro en el menú)
+    // También lo cierra si es gratis y ya alcanzó su límite
+    if (count === 3 || (!isPremium && count >= 3)) {
       setShowQuestion(false);
     } else {
+      // Si es Premium y ya va en la pregunta 4 en adelante, la carga de inmediato
       setCurrentQuestion(null);
       await loadQuestion(currentSubject);
     }
@@ -221,6 +224,7 @@ export default function App() {
         userName={userName}
         userData={userData}
         isLoggedIn={isLoggedIn}
+        isPremium={isPremium}
         onSubjectClick={openQuestion}
         onProfileClick={() => setShowProfile(true)}
         onLogoutClick={() => setShowLogoutConfirm(true)}
