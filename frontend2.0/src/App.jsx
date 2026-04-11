@@ -93,10 +93,23 @@ export default function App() {
   };
 
   // ── QUESTIONS ────────────────────────────────────────────────────────
+  // ── QUESTIONS ────────────────────────────────────────────────────────
   const openQuestion = async (subject) => {
+    // Si no es premium y ya llegó al límite en esta materia
     if (!isPremium && (userData.preguntasHoy[subject] || 0) >= 3) {
-      alert('Ya completaste tus 3 preguntas gratuitas de hoy para esta materia. ¡Hazte Premium para seguir practicando!');
-      setUpsellType('subject');
+      
+      // 1. Eliminamos el "alert()" que salía antes.
+      
+      // 2. Revisamos si ya completó TODAS las materias
+      const materias = ['M1', 'M2', 'Lectora', 'Ciencias', 'Historia'];
+      const todasCompletadas = materias.every(m => (userData.preguntasHoy[m] || 0) >= 3);
+
+      if (todasCompletadas) {
+        setUpsellType('all'); // Muestra el pop-up de confeti (🎉)
+      } else {
+        setUpsellType('subject'); // Muestra el pop-up del candado (🔒)
+      }
+
       setShowUpsell(true);
       return;
     }
