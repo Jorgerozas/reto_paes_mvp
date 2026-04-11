@@ -6,7 +6,6 @@ const SUBJECTS = [
   { key: 'Historia', label: 'Historia y Cs. Sociales',emoji: '🏛️', color: '#FDF4FF', iconColor: '#A855F7' },
 ];
 
-// Recibimos isPremium en los props
 export default function Dashboard({ userName, userData, isLoggedIn, isPremium, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick }) {
   const totalHoy     = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
   const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
@@ -76,20 +75,22 @@ export default function Dashboard({ userName, userData, isLoggedIn, isPremium, o
           const isDone = count >= 3;
           const pct    = Math.min((count / 3) * 100, 100);
 
-          // LÓGICA NUEVA: Si es premium, no le ponemos la clase 'completed' que opaca la tarjeta
           const cardClass = `subject-card${isDone && !isPremium ? ' completed' : ''}`;
 
-          // Personalizamos el texto y color del botoncito (chip)
+          // Lógica de textos y estilos
           let chipText = `${count}/3`;
           let chipClass = 'chip-pending';
+          let premiumStyle = {}; // Estilo extra por si es Premium
 
           if (isDone) {
             if (isPremium) {
-              chipText = `🔥 ${count} (Modo Infinito)`;
-              chipClass = 'chip-pending'; // Mantiene el color naranjo/vivo
+              // Reemplazamos el emoji de fuego y ponemos un Call to Action (CTA) claro
+              chipText = `♾️ Seguir practicando (${count})`;
+              chipClass = 'chip-pending';
+              premiumStyle = { backgroundColor: '#EDE9FE', color: '#6D28D9', fontWeight: 700 }; // Tono morado premium sutil
             } else {
               chipText = '✓ Listo';
-              chipClass = 'chip-done'; // Se pone gris
+              chipClass = 'chip-done';
             }
           }
 
@@ -119,7 +120,7 @@ export default function Dashboard({ userName, userData, isLoggedIn, isPremium, o
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className={`status-chip ${chipClass}`}>
+                  <span className={`status-chip ${chipClass}`} style={premiumStyle}>
                     {chipText}
                   </span>
                 </div>
