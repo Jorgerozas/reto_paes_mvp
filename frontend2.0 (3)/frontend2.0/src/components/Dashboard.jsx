@@ -1,0 +1,146 @@
+const SUBJECTS = [
+  { key: 'M1',       label: 'Matemática M1',          emoji: '📐', color: '#EEF2FF', iconColor: '#4F46E5' },
+  { key: 'M2',       label: 'Matemática M2',          emoji: '📊', color: '#F0FDF4', iconColor: '#10B981' },
+  { key: 'Lectora',  label: 'Comp. Lectora',          emoji: '📖', color: '#FFF7ED', iconColor: '#F59E0B' },
+  { key: 'Ciencias', label: 'Ciencias',               emoji: '🔬', color: '#F0F9FF', iconColor: '#0EA5E9' },
+  { key: 'Historia', label: 'Historia y Cs. Sociales',emoji: '🏛️', color: '#FDF4FF', iconColor: '#A855F7' },
+];
+
+export default function Dashboard({ userName, userData, isLoggedIn, isPremium, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick, onFriendsClick }) {
+  const totalHoy     = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
+  const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
+  const totalStreak  = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
+
+  return (
+    <div className="app-container">
+      {/* ── Header Card ── */}
+      <div className="header-card">
+        <div className="header-top">
+          <div>
+            <p className="header-greeting">¡Bienvenido de vuelta!</p>
+            <h1 className="header-name">{userName} 👋</h1>
+            <p className="header-subtitle">¿Qué entrenaremos hoy?</p>
+          </div>
+          {isLoggedIn && (
+            <div className="header-actions">
+              <button
+                className="avatar-btn"
+                onClick={onProfileClick}
+                title="Mi Perfil"
+                aria-label="Mi Perfil"
+              >
+                🎓
+                <span className="avatar-label">Mi Perfil</span>
+              </button>
+              <button
+                className="logout-btn-header"
+                onClick={onLogoutClick}
+              >
+                Salir
+              </button>
+            </div>
+          )}
+        </div>
+
+        {isLoggedIn && (
+          <div className="daily-summary">
+            <div className="daily-chip">
+              <span className="daily-chip-value">🎯 {correctasHoy}/{totalHoy}</span>
+              <span className="daily-chip-label">Aciertos<br/>hoy</span>
+            </div>
+            <div className="daily-chip">
+              <span className="daily-chip-value">🔥 {totalStreak}</span>
+              <span className="daily-chip-label">Puntaje<br/>rachas</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Summary Button ── */}
+      <button className="summary-open-btn" onClick={onSummaryClick}>
+        <span className="summary-open-icon">📚</span>
+        <div className="summary-open-text">
+          <span className="summary-open-title">Resúmenes</span>
+          <span className="summary-open-sub">Fórmulas y contenidos clave</span>
+        </div>
+        <span className="summary-open-chevron">›</span>
+      </button>
+
+      {/* ── Friends Button ── */}
+      {isLoggedIn && (
+        <button className="summary-open-btn" onClick={onFriendsClick}>
+          <span className="summary-open-icon">👥</span>
+          <div className="summary-open-text">
+            <span className="summary-open-title">Amigos</span>
+            <span className="summary-open-sub">Busca amigos y comparte tu progreso</span>
+          </div>
+          <span className="summary-open-chevron">›</span>
+        </button>
+      )}
+
+      {/* ── Subject Cards ── */}
+      <p className="section-label">Materias</p>
+      <div className="subject-grid">
+        {SUBJECTS.map(s => {
+          const count  = userData.preguntasHoy[s.key] || 0;
+          const streak = userData.streaks[s.key] || 0;
+          const isDone = count >= 3;
+          const pct    = Math.min((count / 3) * 100, 100);
+
+          const cardClass = `subject-card${isDone && !isPremium ? ' completed' : ''}`;
+
+          // Lógica de textos y estilos
+          let chipText = `${count}/3`;
+          let chipClass = 'chip-pending';
+          let premiumStyle = {}; // Estilo extra por si es Premium
+
+          if (isDone) {
+            if (isPremium) {
+              // Reemplazamos el emoji de fuego y ponemos un Call to Action (CTA) claro
+              chipText = `♾️ Seguir practicando (${count})`;
+              chipClass = 'chip-pending';
+              premiumStyle = { backgroundColor: '#EDE9FE', color: '#6D28D9', fontWeight: 700 }; // Tono morado premium sutil
+            } else {
+              chipText = '✓ Listo';
+              chipClass = 'chip-done';
+            }
+          }
+
+          return (
+            <div
+              key={s.key}
+              className={cardClass}
+              onClick={() => onSubjectClick(s.key)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && onSubjectClick(s.key)}
+            >
+              <div
+                className="subject-icon-wrap"
+                style={{ background: s.color }}
+              >
+                {s.emoji}
+              </div>
+
+              <div className="subject-body">
+                <p className="subject-name">{s.label}</p>
+                <div className="subject-meta">
+                  <span className="streak-pill">🔥 {streak}</span>
+                  <div className="progress-bar-wrap">
+                    <div
+                      className={`progress-bar-fill${isDone ? ' done' : ''}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className={`status-chip ${chipClass}`} style={premiumStyle}>
+                    {chipText}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
