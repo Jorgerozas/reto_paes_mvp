@@ -6,7 +6,7 @@ const SUBJECTS = [
   { key: 'Historia', label: 'Historia y Cs. Sociales',emoji: '🏛️', color: '#FDF4FF', iconColor: '#A855F7' },
 ];
 
-export default function Dashboard({ userName, userData, isLoggedIn, isPremium, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick }) {
+export default function Dashboard({ userName, userData, isLoggedIn, isPremium, onSubjectClick, onProfileClick, onLogoutClick, onSummaryClick, onFriendsClick }) {
   const totalHoy     = Object.values(userData.preguntasHoy).reduce((a, b) => a + b, 0);
   const correctasHoy = Object.values(userData.correctasHoy).reduce((a, b) => a + b, 0);
   const totalStreak  = Object.values(userData.streaks).reduce((a, b) => a + b, 0);
@@ -65,6 +65,18 @@ export default function Dashboard({ userName, userData, isLoggedIn, isPremium, o
         </div>
         <span className="summary-open-chevron">›</span>
       </button>
+
+      {/* ── Friends Button ── */}
+      {isLoggedIn && (
+        <button className="summary-open-btn" onClick={onFriendsClick}>
+          <span className="summary-open-icon">👥</span>
+          <div className="summary-open-text">
+            <span className="summary-open-title">Amigos</span>
+            <span className="summary-open-sub">Busca amigos y comparte tu progreso</span>
+          </div>
+          <span className="summary-open-chevron">›</span>
+        </button>
+      )}
 
       {/* ── Subject Cards ── */}
       <p className="section-label">Materias</p>

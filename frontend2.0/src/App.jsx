@@ -6,6 +6,7 @@ import ProfileModal from './components/ProfileModal';
 import UpsellModal from './components/UpsellModal';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
 import SummaryModal from './components/SummaryModal';
+import FriendsModal from './components/FriendsModal';
 
 const API_URL = 'https://reto-paes-mvp.onrender.com/api';
 
@@ -30,6 +31,7 @@ export default function App() {
   const [upsellType, setUpsellType]               = useState('all');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSummary, setShowSummary]             = useState(false);
+  const [showFriends, setShowFriends]             = useState(false);
 
   // Question state
   const [currentSubject, setCurrentSubject]   = useState('');
@@ -245,6 +247,7 @@ export default function App() {
         onProfileClick={() => setShowProfile(true)}
         onLogoutClick={() => setShowLogoutConfirm(true)}
         onSummaryClick={() => setShowSummary(true)}
+        onFriendsClick={() => setShowFriends(true)}
       />
 
       {!isLoggedIn && (
@@ -295,6 +298,14 @@ export default function App() {
 
       {showSummary && (
         <SummaryModal onClose={() => setShowSummary(false)} />
+      )}
+
+      {showFriends && (
+        <FriendsModal
+          apiUrl={API_URL}
+          userId={userId}
+          onClose={() => setShowFriends(false)}
+        />
       )}
 
       {showLogoutConfirm && (
