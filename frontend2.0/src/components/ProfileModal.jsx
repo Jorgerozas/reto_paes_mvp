@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from './Toast';
 
 const BADGE_COLORS = (pct) => {
   if (pct >= 75) return { color: '#059669', bg: '#D1FAE5' };
@@ -154,7 +155,7 @@ function aggregateStats(stats) {
   return { subjectPcts, subjectTotals, globalCorrectas, globalTotal };
 }
 
-export default function ProfileModal({ apiUrl, userId, userName, userAlias, userData, isPremium, onUpgrade, onClose }) {
+export default function ProfileModal({ apiUrl, userId, userName, userAlias, userData, isPremium, onUpgrade, onClose, isPage }) {
   const [activeTab, setActiveTab]     = useState('resumen');
   const [stats, setStats]             = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -327,11 +328,11 @@ export default function ProfileModal({ apiUrl, userId, userName, userAlias, user
   };
 
   return (
-    <div className="overlay-modal">
-      <div className="profile-card">
+    <div className={isPage ? 'page-view' : 'overlay-modal'}>
+      <div className={isPage ? 'profile-card page-card' : 'profile-card'}>
         {/* Hero header */}
         <div className="profile-hero">
-          <button className="profile-close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+          {!isPage && <button className="profile-close-btn" onClick={onClose} aria-label="Cerrar">×</button>}
 
           <div className="profile-avatar">🎓</div>
           <p className="profile-name">{userName}</p>
@@ -404,10 +405,10 @@ export default function ProfileModal({ apiUrl, userId, userName, userAlias, user
                         if (res.ok) {
                           onUpgrade();
                         } else {
-                          alert('Error al actualizar.');
+                          toast('Error al actualizar.', 'error');
                         }
                       } catch {
-                        alert('Error de conexión.');
+                        toast('Error de conexion.', 'error');
                       }
                     }}
                   >

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function FriendsModal({ apiUrl, userId, onClose }) {
+export default function FriendsModal({ apiUrl, userId, onClose, isPage }) {
   const [activeTab, setActiveTab] = useState('buscar');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -105,9 +105,10 @@ export default function FriendsModal({ apiUrl, userId, onClose }) {
 
   // Friend profile view
   if (selectedFriend) {
+    const Wrapper = isPage ? 'div' : 'div';
     return (
-      <div className="overlay-modal">
-        <div className="friends-card">
+      <div className={isPage ? 'page-view' : 'overlay-modal'}>
+        <div className={isPage ? 'friends-card page-card' : 'friends-card'}>
           <div className="friends-hero">
             <button className="profile-close-btn" onClick={() => setSelectedFriend(null)} aria-label="Volver">←</button>
             <div className="profile-avatar">👤</div>
@@ -194,11 +195,11 @@ export default function FriendsModal({ apiUrl, userId, onClose }) {
   }
 
   return (
-    <div className="overlay-modal">
-      <div className="friends-card">
+    <div className={isPage ? 'page-view' : 'overlay-modal'}>
+      <div className={isPage ? 'friends-card page-card' : 'friends-card'}>
         {/* Header */}
         <div className="friends-hero">
-          <button className="profile-close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+          {!isPage && <button className="profile-close-btn" onClick={onClose} aria-label="Cerrar">×</button>}
           <div className="profile-avatar">👥</div>
           <p className="profile-name">Amigos</p>
 

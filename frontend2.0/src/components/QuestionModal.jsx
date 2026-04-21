@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const SUBJECT_NAMES = {
-  M1:      'Matemática M1',
-  M2:      'Matemática M2',
+  M1:      'Matematica M1',
+  M2:      'Matematica M2',
   Lectora: 'Competencia Lectora',
   Ciencias:'Ciencias',
   Historia:'Historia y Cs. Sociales',
@@ -10,13 +10,29 @@ const SUBJECT_NAMES = {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
-export default function QuestionModal({ subject, question, preguntasHoy, onAnswer, onNext, onClose }) {
-  const [selected, setSelected]   = useState(null);
-  const [answered, setAnswered]   = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [flash, setFlash]         = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [elapsed, setElapsed]     = useState(0);
+const ENCOURAGEMENTS = [
+  'Vas muy bien! Sigue asi 🔥',
+  'Excelente! Eres imparable 💪',
+  'Crack! Otro acierto mas 🎯',
+  'Genial! Tu esfuerzo se nota ✨',
+  'Increible! Sigue sumando 🚀',
+];
+
+const MOTIVATIONS = [
+  'No te preocupes, aprender del error es clave 💪',
+  'Tranquilo, la proxima sera! 🎯',
+  'Cada error es una leccion. Sigue! 📚',
+  'Asi se aprende, no te rindas 🔥',
+];
+
+export default function QuestionModal({ subject, question, preguntasHoy, isPremium, onAnswer, onNext, onClose }) {
+  const [selected, setSelected]       = useState(null);
+  const [answered, setAnswered]       = useState(false);
+  const [isCorrect, setIsCorrect]     = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [flash, setFlash]             = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [elapsed, setElapsed]         = useState(0);
   const updatedRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -25,11 +41,12 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
     setSelected(null);
     setAnswered(false);
     setIsCorrect(false);
+    setFeedbackMsg('');
     setFlash(false);
     setElapsed(0);
   }, [question?.id]);
 
-  // Timer: counts up every second until the student answers
+  // Timer
   useEffect(() => {
     if (!question || answered) {
       clearInterval(timerRef.current);
@@ -46,13 +63,18 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
     }
   }, [question, answered]);
 
-  const handleSelect = async (idx) => {
-    if (answered) return;
+  const handleSelect = useCallback(async (idx) => {
+    if (answered || idx >= question.opciones.length) return;
     setSelected(idx);
     setAnswered(true);
 
     const correct = idx === question.indice_correcto;
     setIsCorrect(correct);
+    setFeedbackMsg(
+      correct
+        ? ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)]
+        : MOTIVATIONS[Math.floor(Math.random() * MOTIVATIONS.length)]
+    );
 
     if (correct) {
       setFlash(true);
@@ -61,7 +83,35 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
 
     const updated = await onAnswer(correct);
     updatedRef.current = updated;
-  };
+  }, [answered, question, onAnswer]);
+
+  // Keyboard shortcuts: A-E to select, Enter for next
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const key = e.key.toUpperCase();
+      const idx = LETTERS.indexOf(key);
+
+      if (!answered && idx !== -1 && idx < (question?.opciones?.length || 0)) {
+        e.preventDefault();
+        handleSelect(idx);
+      }
+
+      if (answered && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        if (!loading) handleNext();
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [answered, loading, question, handleSelect, onClose]);
 
   const handleNext = async () => {
     setLoading(true);
@@ -69,11 +119,12 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
     setLoading(false);
   };
 
-  // Progress dots: shows position in the 3-question sequence
-  const questionNumber = (preguntasHoy || 0) + 1;  // 1, 2, or 3
-  const dots = [1, 2, 3].map(n => {
-    if (n < questionNumber)        return 'done';
-    if (n === questionNumber)      return 'active';
+  const questionNumber = (preguntasHoy || 0) + 1;
+  const maxQuestions = isPremium ? Math.max(questionNumber, 3) : 3;
+  const dots = Array.from({ length: Math.min(maxQuestions, 3) }, (_, n) => {
+    const num = n + 1;
+    if (num < questionNumber)   return 'done';
+    if (num === questionNumber) return 'active';
     return '';
   });
 
@@ -88,7 +139,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
   const getOptionClass = (idx) => {
     if (!answered) return 'option-btn';
     if (idx === question.indice_correcto) return 'option-btn correct';
-    if (idx === selected)                 return 'option-btn wrong' + (selected !== question.indice_correcto ? ' shake' : '');
+    if (idx === selected) return 'option-btn wrong' + (selected !== question.indice_correcto ? ' shake' : '');
     return 'option-btn';
   };
 
@@ -104,7 +155,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
                 <div key={i} className={`progress-dot${state ? ` ${state}` : ''}`} />
               ))}
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4, fontWeight: 600 }}>
-                {Math.min(questionNumber, 3)}/3
+                {Math.min(questionNumber, maxQuestions)}/{maxQuestions}
               </span>
             </div>
           </div>
@@ -128,7 +179,9 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
                 onClick={() => handleSelect(idx)}
                 disabled={answered}
               >
-                <span className="option-letter">{LETTERS[idx]}</span>
+                <span className="option-letter">
+                  {LETTERS[idx]}
+                </span>
                 <span>{opt}</span>
               </button>
             ))}
@@ -139,7 +192,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
               <div className={`feedback-header ${isCorrect ? 'correct-bg' : 'wrong-bg'}`}>
                 <span className="feedback-icon">{isCorrect ? '✅' : '❌'}</span>
                 <span className={`feedback-title ${isCorrect ? 'correct-text' : 'wrong-text'}`}>
-                  {isCorrect ? '¡Correcto! Sigue así 🔥' : 'No fue esta vez 😢'}
+                  {feedbackMsg}
                 </span>
               </div>
               <div className="feedback-body">
@@ -152,7 +205,7 @@ export default function QuestionModal({ subject, question, preguntasHoy, onAnswe
                   {loading
                     ? 'Cargando...'
                     : llegaALaMeta
-                    ? '¡Materia Completada! 🏆'
+                    ? 'Materia Completada! 🏆'
                     : 'Siguiente pregunta →'}
                 </button>
               </div>

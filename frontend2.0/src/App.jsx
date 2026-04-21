@@ -7,6 +7,8 @@ import UpsellModal from './components/UpsellModal';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
 import SummaryModal from './components/SummaryModal';
 import FriendsModal from './components/FriendsModal';
+import BottomNav from './components/BottomNav';
+import ToastContainer, { toast } from './components/Toast';
 
 const API_URL = 'https://reto-paes-mvp.onrender.com/api';
 
@@ -19,19 +21,20 @@ const INITIAL_USER_DATA = {
 export default function App() {
   const [userId, setUserId]       = useState(null);
   const [userName, setUserName]   = useState('Estudiante');
-  const [userAlias, setUserAlias] = useState(''); // <-- NUEVO ESTADO PARA EL USERNAME
+  const [userAlias, setUserAlias] = useState('');
   const [userData, setUserData]   = useState(INITIAL_USER_DATA);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isPremium, setIsPremium]   = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
 
-  // Modals
+  // Navigation
+  const [activeTab, setActiveTab] = useState('home');
+
+  // Modals (overlays that float above everything)
   const [showQuestion, setShowQuestion]           = useState(false);
-  const [showProfile, setShowProfile]             = useState(false);
   const [showUpsell, setShowUpsell]               = useState(false);
   const [upsellType, setUpsellType]               = useState('all');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showSummary, setShowSummary]             = useState(false);
-  const [showFriends, setShowFriends]             = useState(false);
 
   // Question state
   const [currentSubject, setCurrentSubject]   = useState('');
@@ -42,7 +45,7 @@ export default function App() {
   useEffect(() => {
     const savedId      = localStorage.getItem('retoPaes_userId');
     const savedName    = localStorage.getItem('retoPaes_userName');
-    const savedAlias   = localStorage.getItem('retoPaes_userAlias'); // <-- Recuperar username
+    const savedAlias   = localStorage.getItem('retoPaes_userAlias');
     const savedPremium = localStorage.getItem('retoPaes_isPremium') === 'true';
 
     if (savedId && savedName) {
@@ -52,13 +55,18 @@ export default function App() {
           if (data) {
             setUserId(savedId);
             setUserName(capitalize(savedName));
-            setUserAlias(savedAlias || ''); // <-- Guardarlo en el estado
+            setUserAlias(savedAlias || '');
             setUserData(data);
             setIsPremium(savedPremium);
             setIsLoggedIn(true);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          toast('No se pudo conectar. Revisa tu conexion.', 'error');
+        })
+        .finally(() => setIsRestoring(false));
+    } else {
+      setIsRestoring(false);
     }
   }, []);
 
@@ -68,15 +76,18 @@ export default function App() {
   const handleLogin = async (id, name, alias, data, premiumStatus) => {
     setUserId(id);
     setUserName(capitalize(name));
-    setUserAlias(alias); // <-- Actualizar estado del username
+    setUserAlias(alias);
     setUserData(data);
     setIsPremium(premiumStatus);
     setIsLoggedIn(true);
+    setActiveTab('home');
 
     localStorage.setItem('retoPaes_userId', id);
     localStorage.setItem('retoPaes_userName', name);
-    localStorage.setItem('retoPaes_userAlias', alias); // <-- Guardarlo en caché
+    localStorage.setItem('retoPaes_userAlias', alias);
     localStorage.setItem('retoPaes_isPremium', premiumStatus);
+
+    toast('Bienvenido de vuelta!', 'success');
   };
 
   const handleLogout = () => {
@@ -86,7 +97,8 @@ export default function App() {
     setUserAlias('');
     setUserData(INITIAL_USER_DATA);
     setIsPremium(false);
-    
+    setActiveTab('home');
+
     localStorage.removeItem('retoPaes_userId');
     localStorage.removeItem('retoPaes_userName');
     localStorage.removeItem('retoPaes_userAlias');
@@ -95,21 +107,15 @@ export default function App() {
   };
 
   // ── QUESTIONS ────────────────────────────────────────────────────────
-  // ── QUESTIONS ────────────────────────────────────────────────────────
   const openQuestion = async (subject) => {
-    // Si no es premium y ya llegó al límite en esta materia
     if (!isPremium && (userData.preguntasHoy[subject] || 0) >= 3) {
-      
-      // 1. Eliminamos el "alert()" que salía antes.
-      
-      // 2. Revisamos si ya completó TODAS las materias
       const materias = ['M1', 'M2', 'Lectora', 'Ciencias', 'Historia'];
       const todasCompletadas = materias.every(m => (userData.preguntasHoy[m] || 0) >= 3);
 
       if (todasCompletadas) {
-        setUpsellType('all'); // Muestra el pop-up de confeti (🎉)
+        setUpsellType('all');
       } else {
-        setUpsellType('subject'); // Muestra el pop-up del candado (🔒)
+        setUpsellType('subject');
       }
 
       setShowUpsell(true);
@@ -131,8 +137,8 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/pregunta/${subject}/${userId}`);
       if (!res.ok) {
-        if (res.status === 404) alert('¡Felicidades! Ya respondiste todas las preguntas de esta materia.');
-        else alert('Hubo un error al buscar la pregunta.');
+        if (res.status === 404) toast('Felicidades! Ya respondiste todas las preguntas de esta materia.', 'success');
+        else toast('Hubo un error al buscar la pregunta.', 'error');
         return false;
       }
       const q = await res.json();
@@ -140,7 +146,7 @@ export default function App() {
       setCachedQuestions(prev => ({ ...prev, [subject]: q }));
       return true;
     } catch {
-      alert('No se pudo conectar con el servidor.');
+      toast('No se pudo conectar con el servidor.', 'error');
       return false;
     }
   };
@@ -187,17 +193,13 @@ export default function App() {
     const count = updatedData.preguntasHoy[currentSubject] || 0;
     setCachedQuestions(prev => { const next = { ...prev }; delete next[currentSubject]; return next; });
 
-    // Siempre celebramos si llega exactamente a 3
     if (count === 3) {
       triggerConfetti(updatedData);
     }
 
-    // Cierra el modal SIEMPRE al llegar a 3 (para que el Premium vea su logro en el menú)
-    // También lo cierra si es gratis y ya alcanzó su límite
     if (count === 3 || (!isPremium && count >= 3)) {
       setShowQuestion(false);
     } else {
-      // Si es Premium y ya va en la pregunta 4 en adelante, la carga de inmediato
       setCurrentQuestion(null);
       await loadQuestion(currentSubject);
     }
@@ -236,49 +238,91 @@ export default function App() {
   };
 
   // ── RENDER ────────────────────────────────────────────────────────────
+
+  // Splash screen while restoring session
+  if (isRestoring) {
+    return (
+      <>
+        <div className="splash-screen">
+          <div className="splash-logo">🚀</div>
+          <h1 className="splash-title">Reto PAES</h1>
+          <p className="splash-subtitle">Preparando tu entrenamiento...</p>
+          <div className="splash-loader">
+            <div className="splash-loader-bar" />
+          </div>
+        </div>
+        <ToastContainer />
+      </>
+    );
+  }
+
   return (
     <>
-      <Dashboard
-        userName={userName}
-        userData={userData}
-        isLoggedIn={isLoggedIn}
-        isPremium={isPremium}
-        onSubjectClick={openQuestion}
-        onProfileClick={() => setShowProfile(true)}
-        onLogoutClick={() => setShowLogoutConfirm(true)}
-        onSummaryClick={() => setShowSummary(true)}
-        onFriendsClick={() => setShowFriends(true)}
-      />
+      {/* ── Tab content ── */}
+      <div className="tab-page-container">
+        {activeTab === 'home' && (
+          <Dashboard
+            userName={userName}
+            userData={userData}
+            isLoggedIn={isLoggedIn}
+            isPremium={isPremium}
+            onSubjectClick={openQuestion}
+            onLogoutClick={() => setShowLogoutConfirm(true)}
+          />
+        )}
 
+        {activeTab === 'summary' && (
+          <SummaryModal onClose={() => setActiveTab('home')} isPage />
+        )}
+
+        {activeTab === 'friends' && isLoggedIn && (
+          <FriendsModal
+            apiUrl={API_URL}
+            userId={userId}
+            onClose={() => setActiveTab('home')}
+            isPage
+          />
+        )}
+
+        {activeTab === 'profile' && isLoggedIn && (
+          <ProfileModal
+            apiUrl={API_URL}
+            userId={userId}
+            userName={userName}
+            userAlias={userAlias}
+            userData={userData}
+            isPremium={isPremium}
+            onUpgrade={() => {
+              setIsPremium(true);
+              localStorage.setItem('retoPaes_isPremium', 'true');
+              toast('Felicidades! Ya eres Premium.', 'success');
+            }}
+            onClose={() => setActiveTab('home')}
+            isPage
+          />
+        )}
+      </div>
+
+      {/* ── Bottom Navigation ── */}
+      {isLoggedIn && (
+        <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+      )}
+
+      {/* ── Auth modal (not logged in) ── */}
       {!isLoggedIn && (
         <AuthModal apiUrl={API_URL} onLogin={handleLogin} />
       )}
 
+      {/* ── Overlay modals ── */}
       {showQuestion && currentQuestion && (
         <QuestionModal
           subject={currentSubject}
           question={currentQuestion}
           preguntasHoy={userData.preguntasHoy[currentSubject] || 0}
+          isPremium={isPremium}
           onAnswer={handleAnswerSubmit}
           onNext={handleNextQuestion}
           onClose={closeQuestion}
-        />
-      )}
-
-      {showProfile && (
-        <ProfileModal
-          apiUrl={API_URL}
-          userId={userId}
-          userName={userName}
-          userAlias={userAlias} // <-- AQUÍ LE PASAMOS EL USERNAME AL PERFIL
-          userData={userData}
-          isPremium={isPremium}
-          onUpgrade={() => {
-            setIsPremium(true);
-            localStorage.setItem('retoPaes_isPremium', 'true');
-            alert('¡Felicidades! Ya eres Premium desde tu perfil.');
-          }}
-          onClose={() => setShowProfile(false)}
         />
       )}
 
@@ -291,20 +335,8 @@ export default function App() {
             setIsPremium(true);
             localStorage.setItem('retoPaes_isPremium', 'true');
             setShowUpsell(false);
-            alert('¡Felicidades! Ya eres Premium. Tienes preguntas ilimitadas.');
+            toast('Felicidades! Ya eres Premium. Tienes preguntas ilimitadas.', 'success');
           }}
-        />
-      )}
-
-      {showSummary && (
-        <SummaryModal onClose={() => setShowSummary(false)} />
-      )}
-
-      {showFriends && (
-        <FriendsModal
-          apiUrl={API_URL}
-          userId={userId}
-          onClose={() => setShowFriends(false)}
         />
       )}
 
@@ -314,6 +346,8 @@ export default function App() {
           onCancel={() => setShowLogoutConfirm(false)}
         />
       )}
+
+      <ToastContainer />
     </>
   );
 }

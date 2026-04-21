@@ -205,17 +205,27 @@ function FormulaCard({ label, formula, highlight }) {
   );
 }
 
-function SectionCard({ section }) {
+function SectionCard({ section, index = 0 }) {
   const c = COLORS[section.color] || COLORS.blue;
   return (
-    <div className="summary-section" style={{ borderColor: c.border, background: c.bg }}>
-      <h4 className="summary-section-title" style={{ color: c.accent }}>{section.title}</h4>
+    <div
+      className="summary-section"
+      style={{ borderColor: c.border, background: c.bg, animationDelay: `${index * 0.04}s` }}
+    >
+      <div className="summary-section-header">
+        <div className="summary-section-dot" style={{ background: c.accent }} />
+        <h4 className="summary-section-title" style={{ color: c.accent }}>{section.title}</h4>
+        <span className="summary-section-count" style={{ color: c.accent, background: `${c.accent}15` }}>
+          {section.formulas.length + (section.extras?.length || 0)}
+        </span>
+      </div>
       {section.note && <p className="summary-note">{section.note}</p>}
       <div className="formula-group">
         {section.formulas.map((f, i) => <FormulaCard key={i} {...f} />)}
       </div>
       {section.extras && (
         <div className="formula-extras">
+          <span className="formula-extras-label">Datos clave</span>
           {section.extras.map((f, i) => <FormulaCard key={i} {...f} />)}
         </div>
       )}
@@ -223,7 +233,7 @@ function SectionCard({ section }) {
   );
 }
 
-export default function SummaryModal({ onClose }) {
+export default function SummaryModal({ onClose, isPage }) {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [showFlashcards, setShowFlashcards] = useState(false);
 
@@ -233,8 +243,8 @@ export default function SummaryModal({ onClose }) {
 
   if (selectedSubject === 'M1') {
     return (
-      <div className="overlay-modal">
-        <div className="summary-card">
+      <div className={isPage ? 'page-view' : 'overlay-modal'}>
+        <div className={isPage ? 'summary-card page-card' : 'summary-card'}>
           <div className="modal-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button className="summary-back-btn" onClick={() => setSelectedSubject(null)}>←</button>
@@ -244,12 +254,35 @@ export default function SummaryModal({ onClose }) {
               <button className="fc-evaluate-btn" onClick={() => setShowFlashcards(true)}>
                 🧠 Evalúate
               </button>
-              <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+              {!isPage && <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>}
             </div>
           </div>
+          {/* Topic quick-nav pills */}
+          <div className="summary-topic-nav">
+            {M1_SUMMARY.map((section, i) => {
+              const c = COLORS[section.color] || COLORS.blue;
+              return (
+                <button
+                  key={i}
+                  className="summary-topic-pill"
+                  style={{ background: c.bg, color: c.accent, borderColor: c.border }}
+                  onClick={() => {
+                    document.getElementById(`section-${i}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  {section.title.split(' ')[0]}
+                </button>
+              );
+            })}
+          </div>
           <div className="modal-body summary-body">
+            <div className="summary-formula-count">
+              <span>📊</span> {M1_SUMMARY.reduce((acc, s) => acc + s.formulas.length + (s.extras?.length || 0), 0)} fórmulas en {M1_SUMMARY.length} temas
+            </div>
             {M1_SUMMARY.map((section, i) => (
-              <SectionCard key={i} section={section} />
+              <div key={i} id={`section-${i}`}>
+                <SectionCard section={section} index={i} />
+              </div>
             ))}
           </div>
         </div>
@@ -258,21 +291,32 @@ export default function SummaryModal({ onClose }) {
   }
 
   if (selectedSubject) {
+    const subj = SUBJECTS.find(s => s.key === selectedSubject);
     return (
-      <div className="overlay-modal">
-        <div className="summary-card">
+      <div className={isPage ? 'page-view' : 'overlay-modal'}>
+        <div className={isPage ? 'summary-card page-card' : 'summary-card'}>
           <div className="modal-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button className="summary-back-btn" onClick={() => setSelectedSubject(null)}>←</button>
-              <h3>{SUBJECTS.find(s => s.key === selectedSubject)?.emoji} {SUBJECTS.find(s => s.key === selectedSubject)?.label}</h3>
+              <h3>{subj?.emoji} {subj?.label}</h3>
             </div>
-            <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+            {!isPage && <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>}
           </div>
           <div className="modal-body">
             <div className="summary-wip">
-              <span className="summary-wip-icon">🚧</span>
-              <p className="summary-wip-title">En construcción</p>
-              <p className="summary-wip-text">Estamos preparando el resumen de esta materia. ¡Pronto estará disponible!</p>
+              <div className="summary-wip-emoji-row">
+                <span className="summary-wip-icon">{subj?.emoji}</span>
+                <span className="summary-wip-icon-plus">+</span>
+                <span className="summary-wip-icon">📝</span>
+              </div>
+              <p className="summary-wip-title">Estamos preparando este resumen</p>
+              <p className="summary-wip-text">El resumen de {subj?.label} estará disponible pronto con todas las fórmulas y contenidos clave.</p>
+              <div className="summary-wip-progress">
+                <div className="summary-wip-bar">
+                  <div className="summary-wip-bar-fill" />
+                </div>
+                <span className="summary-wip-bar-label">En progreso...</span>
+              </div>
             </div>
           </div>
         </div>
@@ -281,35 +325,54 @@ export default function SummaryModal({ onClose }) {
   }
 
   return (
-    <div className="overlay-modal">
-      <div className="summary-card">
+    <div className={isPage ? 'page-view' : 'overlay-modal'}>
+      <div className={isPage ? 'summary-card page-card' : 'summary-card'}>
         <div className="modal-header">
           <h3>📚 Resúmenes</h3>
-          <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>
+          {!isPage && <button className="close-btn" onClick={onClose} aria-label="Cerrar">×</button>}
         </div>
         <div className="modal-body">
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
-            Selecciona una materia para ver su resumen de fórmulas y contenidos clave.
-          </p>
-          <div className="summary-subject-list">
-            {SUBJECTS.map(s => (
-              <button
-                key={s.key}
-                className="summary-subject-btn"
-                onClick={() => setSelectedSubject(s.key)}
-              >
-                <div className="subject-icon-wrap" style={{ background: s.color, width: 42, height: 42, borderRadius: 12, fontSize: 20 }}>
-                  {s.emoji}
-                </div>
-                <span className="summary-subject-label">{s.label}</span>
-                {s.key === 'M1' ? (
-                  <span className="chip-done" style={{ fontSize: 10, padding: '2px 8px' }}>Disponible</span>
-                ) : (
-                  <span className="chip-pending" style={{ fontSize: 10, padding: '2px 8px' }}>Pronto</span>
-                )}
-                <span className="summary-chevron">›</span>
-              </button>
-            ))}
+          {/* Hero section */}
+          <div className="summary-hero">
+            <div className="summary-hero-icon">📖</div>
+            <h4 className="summary-hero-title">Tu biblioteca de fórmulas</h4>
+            <p className="summary-hero-sub">Todo lo que necesitas para la PAES, resumido y organizado.</p>
+          </div>
+
+          {/* Flashcards CTA */}
+          <button className="summary-flashcard-cta" onClick={() => setShowFlashcards(true)}>
+            <div className="summary-cta-left">
+              <span className="summary-cta-icon">🧠</span>
+              <div>
+                <span className="summary-cta-title">Evalúate con Flashcards</span>
+                <span className="summary-cta-sub">Pon a prueba tu memoria con tarjetas interactivas</span>
+              </div>
+            </div>
+            <span className="summary-cta-arrow">→</span>
+          </button>
+
+          {/* Subject grid */}
+          <p className="summary-section-label">Elige una materia</p>
+          <div className="summary-subject-grid">
+            {SUBJECTS.map((s, i) => {
+              const available = s.key === 'M1';
+              return (
+                <button
+                  key={s.key}
+                  className={`summary-subject-card${available ? ' summary-subject-available' : ''}`}
+                  onClick={() => setSelectedSubject(s.key)}
+                  style={{ '--card-color': s.iconColor, '--card-bg': s.color, animationDelay: `${i * 0.05}s` }}
+                >
+                  <div className="summary-subject-emoji">{s.emoji}</div>
+                  <span className="summary-subject-name">{s.label}</span>
+                  {available ? (
+                    <span className="summary-subject-badge available">Disponible</span>
+                  ) : (
+                    <span className="summary-subject-badge coming">Pronto</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

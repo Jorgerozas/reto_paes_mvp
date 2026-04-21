@@ -5,7 +5,8 @@ export default function AuthModal({ apiUrl, onLogin }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [name, setName]         = useState('');
-  const [username, setUsername] = useState(''); // <-- NUEVO ESTADO
+  const [username, setUsername]  = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
@@ -13,8 +14,7 @@ export default function AuthModal({ apiUrl, onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validación actualizada para exigir nombre y username en el registro
+
     if (!email || !email.includes('@') || !password || (!isLoginMode && (!name || !username))) {
       setError('Por favor, completa correctamente todos los campos.');
       return;
@@ -24,11 +24,9 @@ export default function AuthModal({ apiUrl, onLogin }) {
     setError('');
 
     const endpoint = isLoginMode ? '/login' : '/registro';
-    
-    // Payload actualizado con el username
     const payload  = isLoginMode
       ? { email, password }
-      : { email, nombre: name, username: username, password };
+      : { email, nombre: name, username, password };
 
     try {
       const res  = await fetch(`${apiUrl}${endpoint}`, {
@@ -39,28 +37,26 @@ export default function AuthModal({ apiUrl, onLogin }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.detail || 'Error en la autenticación.');
+        setError(data.detail || 'Error en la autenticacion.');
         return;
       }
 
-      // Capturamos el nombre y el username dependiendo de si es login o registro
       const displayName = isLoginMode ? data.nombre : name;
-      const displayAlias = isLoginMode ? data.username : data.username; // Usamos data.username del backend
+      const displayAlias = isLoginMode ? data.username : data.username;
 
       localStorage.setItem('retoPaes_userId', data.usuario_id);
       localStorage.setItem('retoPaes_userName', displayName);
-      localStorage.setItem('retoPaes_userAlias', displayAlias); // <-- Guardamos el username en caché
+      localStorage.setItem('retoPaes_userAlias', displayAlias);
 
       const progresoRes = await fetch(`${apiUrl}/progreso/${data.usuario_id}`);
       const progreso    = progresoRes.ok ? await progresoRes.json() : null;
 
-      // OJO AQUÍ: Agregamos displayAlias como el TERCER parámetro
       onLogin(data.usuario_id, displayName, displayAlias, progreso || {
         streaks:      { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
         preguntasHoy: { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
         correctasHoy: { M1: 0, M2: 0, Lectora: 0, Ciencias: 0, Historia: 0 },
       }, data.es_premium || false);
-      
+
     } catch {
       setError('No se pudo conectar con el servidor.');
     } finally {
@@ -81,7 +77,7 @@ export default function AuthModal({ apiUrl, onLogin }) {
             <p className="auth-subtitle">
               {isLoginMode
                 ? 'Ingresa para guardar tu progreso'
-                : 'Únete y asegura tu puntaje PAES'}
+                : 'Unete y asegura tu puntaje PAES'}
             </p>
           </div>
 
@@ -100,17 +96,19 @@ export default function AuthModal({ apiUrl, onLogin }) {
                     autoComplete="name"
                   />
                 </div>
-                {/* NUEVO CAMPO: Username */}
                 <div className="input-wrap">
                   <span className="input-icon">🏷️</span>
                   <input
                     className="auth-input"
                     type="text"
-                    placeholder="Nombre de usuario (único)"
+                    placeholder="Nombre de usuario (unico)"
                     value={username}
-                    onChange={e => setUsername(e.target.value)}
+                    onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
                     autoComplete="username"
                   />
+                  {username && (
+                    <span className="input-helper">@{username}</span>
+                  )}
                 </div>
               </>
             )}
@@ -120,7 +118,7 @@ export default function AuthModal({ apiUrl, onLogin }) {
               <input
                 className="auth-input"
                 type="email"
-                placeholder="Correo electrónico"
+                placeholder="Correo electronico"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 autoComplete="email"
@@ -130,13 +128,22 @@ export default function AuthModal({ apiUrl, onLogin }) {
             <div className="input-wrap">
               <span className="input-icon">🔒</span>
               <input
-                className="auth-input"
-                type="password"
-                placeholder="Contraseña"
+                className="auth-input auth-input-password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Contrasena"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 autoComplete={isLoginMode ? 'current-password' : 'new-password'}
               />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(v => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
             </div>
 
             {error && (
@@ -160,9 +167,9 @@ export default function AuthModal({ apiUrl, onLogin }) {
           </form>
 
           <p className="auth-toggle">
-            {isLoginMode ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
+            {isLoginMode ? 'No tienes cuenta? ' : 'Ya tienes cuenta? '}
             <a onClick={toggle}>
-              {isLoginMode ? 'Regístrate aquí' : 'Inicia sesión'}
+              {isLoginMode ? 'Registrate aqui' : 'Inicia sesion'}
             </a>
           </p>
         </div>

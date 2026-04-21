@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { toast } from './Toast';
 
-// Recibimos la propiedad "type"
 export default function UpsellModal({ userId, type, onClose, onUpgrade }) {
   const [loading, setLoading] = useState(false);
 
@@ -10,14 +10,14 @@ export default function UpsellModal({ userId, type, onClose, onUpgrade }) {
       const res = await fetch(`https://reto-paes-mvp.onrender.com/api/upgrade/${userId}`, {
         method: 'POST'
       });
-      
+
       if (res.ok) {
         onUpgrade();
       } else {
-        alert("Hubo un problema al intentar actualizar tu cuenta.");
+        toast('Hubo un problema al intentar actualizar tu cuenta.', 'error');
       }
-    } catch (error) {
-      alert("Error de conexión con el servidor.");
+    } catch {
+      toast('Error de conexion con el servidor.', 'error');
     } finally {
       setLoading(false);
     }
